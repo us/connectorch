@@ -30,6 +30,9 @@ class DensePropagator(Propagator):
 
     supports_sparse_backward = False
 
+    source: Tensor
+    target: Tensor
+
     def __init__(self, edge_index: Tensor, num_nodes: int) -> None:
         super().__init__(edge_index, num_nodes)
         self.check_dense_cost(torch.float32, reason="was requested")

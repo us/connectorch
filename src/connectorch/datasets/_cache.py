@@ -15,6 +15,7 @@ import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Any
 
 from ..exceptions import ConnectorchError
 
@@ -171,7 +172,7 @@ def _download(
     shutil.move(str(partial), str(target))
 
 
-def _parse_content_range(response) -> tuple[int, int] | None:
+def _parse_content_range(response: Any) -> tuple[int, int] | None:
     """Return ``(first byte, total size)`` from a ``Content-Range`` header."""
     match = re.match(r"\s*bytes\s+(\d+)-(\d+)/(\d+)", response.headers.get("Content-Range", ""))
     if not match:
@@ -179,7 +180,7 @@ def _parse_content_range(response) -> tuple[int, int] | None:
     return int(match.group(1)), int(match.group(3))
 
 
-def _resume_confirmed(response, already: int) -> bool:
+def _resume_confirmed(response: Any, already: int) -> bool:
     """Whether the response really continues from byte ``already``.
 
     A plain 200 means the server ignored the Range header and is sending the
@@ -192,7 +193,7 @@ def _resume_confirmed(response, already: int) -> bool:
     return parsed is not None and parsed[0] == already
 
 
-def _declared_total(response, already: int, expected_size: int | None) -> int | None:
+def _declared_total(response: Any, already: int, expected_size: int | None) -> int | None:
     """The file's full size, from the most authoritative source available.
 
     ``Content-Range`` carries the size of the *whole* file and is therefore

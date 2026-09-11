@@ -32,6 +32,9 @@ class ScatterPropagator(Propagator):
 
     supports_sparse_backward = True
 
+    source: Tensor
+    target: Tensor
+
     def __init__(self, edge_index: Tensor, num_nodes: int) -> None:
         super().__init__(edge_index, num_nodes)
         self.register_buffer("source", edge_index[0].contiguous(), persistent=False)

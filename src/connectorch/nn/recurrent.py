@@ -83,7 +83,9 @@ class ConnectomeRNN(nn.Module):
         ``"auto"``, ``"scatter"``, ``"sparse_mm"`` or ``"dense"``. ``"auto"``
         selects ``"scatter"`` when the weights are trainable, because the backward
         pass of sparse matrix multiplication materialises a dense ``[N, N]``
-        gradient, and ``"sparse_mm"`` otherwise, because it is far faster forward.
+        gradient, and ``"sparse_mm"`` otherwise. The forward advantage of
+        ``"sparse_mm"`` is large on CUDA and at larger batches, and reverses on
+        CPU at batch 1, where ``"scatter"`` is faster; see the benchmarks.
 
     Examples
     --------
@@ -98,6 +100,11 @@ class ConnectomeRNN(nn.Module):
     >>> y.shape
     torch.Size([8, 5, 3])
     """
+
+    edge_index: Tensor
+    edge_weight: Tensor
+    input_index: Tensor
+    output_index: Tensor
 
     def __init__(
         self,
@@ -227,9 +234,7 @@ class ConnectomeRNN(nn.Module):
         outputs = []
 
         for t in range(steps):
-            u = torch.zeros_like(h)
-            u = u.index_add(0, self.input_index, drive[:, t, :].t())
-            messages = self.propagator(h, weight) + u
+            messages = self.propagator(h, weight).index_add(0, self.input_index, drive[:, t, :].t())
             if self.bias is not None:
                 messages = messages + self.bias.unsqueeze(-1)
             activated = self._activation(messages)
@@ -294,6 +299,31 @@ class ConnectomeRNN(nn.Module):
                 f"[{batch}, {self.num_nodes}], got {tuple(state.shape)}."
             )
         return state.t().contiguous()
+
+    def get_extra_state(self) -> dict[str, object]:
+        """Carry the connectome's identity into the checkpoint.
+
+        ``edge_index`` is a persistent buffer, so a checkpoint can replace this
+        model's topology. Without the fingerprint travelling alongside it, the
+        loaded model would report the connectome it was built from while
+        propagating along the one it was given.
+        """
+        return {
+            "fingerprint": self.fingerprint,
+            "weights_mode": self.weights_mode,
+            "initializer": self.initializer,
+            "leak": self.leak,
+            "activation": self.activation_name,
+        }
+
+    def set_extra_state(self, state: dict[str, object]) -> None:
+        """Adopt the identity of the checkpoint being loaded."""
+        self.fingerprint = str(state.get("fingerprint", self.fingerprint))
+        for name in ("weights_mode", "initializer", "activation"):
+            if name in state:
+                setattr(self, f"{name}_name" if name == "activation" else name, state[name])
+        if "leak" in state:
+            self.leak = float(state["leak"])  # type: ignore[arg-type]
 
     def activation_bytes(self, batch: int, steps: int) -> int:
         """Bytes of per-edge activations backpropagation will hold for this call.

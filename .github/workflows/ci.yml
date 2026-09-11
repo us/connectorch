@@ -34,7 +34,9 @@ jobs:
       # The large MaleCNS files are never fetched in PR CI; the bundled sample
       # covers the dataset path offline.
       - name: Test
-        run: uv run pytest -q -m "not network and not large and not cuda" --cov=connectorch --cov-report=term-missing
+        run: >
+          uv run pytest -q -m "not network and not large and not cuda"
+          --cov=connectorch --cov-report=term-missing --cov-fail-under=80
 
   typecheck:
     runs-on: ubuntu-latest
@@ -44,7 +46,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv pip install -e ".[dev]"
-      - run: uv run mypy --ignore-missing-imports src/connectorch || true
+      # No `|| true`: a green badge that guarantees nothing is worse than no badge.
+      - run: uv run mypy --ignore-missing-imports src/connectorch
 
   examples:
     runs-on: ubuntu-latest

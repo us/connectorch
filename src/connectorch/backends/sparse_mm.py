@@ -43,6 +43,9 @@ class SparseMMPropagator(Propagator):
 
     supports_sparse_backward = False
 
+    crow_indices: Tensor
+    col_indices: Tensor
+
     def __init__(self, edge_index: Tensor, num_nodes: int) -> None:
         super().__init__(edge_index, num_nodes)
         source, target = edge_index[0], edge_index[1]

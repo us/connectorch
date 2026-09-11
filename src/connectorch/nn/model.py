@@ -87,7 +87,7 @@ class ConnectomeModel(nn.Module):
         """Encode, run the connectome, read out and decode."""
         if self.encoder is not None:
             x = self.encoder(x)
-        trajectory = self.core(x, steps, **kwargs)  # type: ignore[arg-type]
+        trajectory = self.core(x, steps, **kwargs)
 
         if self.readout == "last":
             features = trajectory[:, -1, :]

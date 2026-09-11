@@ -122,6 +122,8 @@ def to_networkx(
 
     values = connectome.edge_attribute(weight_column) if weight_column else None
     for i in range(connectome.num_edges):
-        attributes = {weight_column: values[i].item()} if values is not None else {}
+        attributes: dict[str, Any] = (
+            {str(weight_column): values[i].item()} if values is not None else {}
+        )
         graph.add_edge(node_ids[source_index[i]], node_ids[target_index[i]], **attributes)
     return graph
