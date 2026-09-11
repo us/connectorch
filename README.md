@@ -14,7 +14,7 @@ net = ct.nn.ConnectomeRNN(fly, weights="trainable")
 y = net(torch.randn(8, fly.num_nodes), steps=10)
 y.square().mean().backward()                # gradients through biological wiring
 
-print(net.edge_weight.grad)                 # one gradient per real synapse
+print(net.edge_weight.grad)                 # one gradient per real connection
 ```
 
 ```bash
@@ -24,8 +24,10 @@ pip install connectorch
 ## Why
 
 A connectome is a wiring diagram: which neuron connects to which, and how strongly.
-Enormous ones now exist. A whole male *Drosophila* central nervous system was
-published in 2025 with 164,587 neurons and 25.5 million connections between them.
+Enormous ones now exist. The whole male *Drosophila* central nervous system was
+released in June 2026 and published in *Cell* that September: **166,691 annotated
+neurons**. ConnecTorch's default traced-only graph compiles to **164,587 nodes and
+25,563,197 aggregated connections**, carrying 124 million synapses between them.
 
 ConnecTorch turns one into a sparse recurrent network you can train with ordinary
 PyTorch, and keeps one promise while doing it:
@@ -42,16 +44,20 @@ not the architecture.
 
 ## It actually runs on the whole fly
 
-Measured on an NVIDIA GB10, with `examples/03_malecns_load.py --full --cuda`:
+Measured on an NVIDIA GB10, reproduced with exactly this command:
+
+```bash
+python examples/03_malecns_load.py --download --cuda --batch-size 4 --steps 8
+```
 
 | | |
 |---|---|
-| neurons | 164,587 |
-| connections | 25,563,197 |
-| synapses | 124,025,046 |
-| load and compile | 16.3 s, 3.0 GB RAM |
+| nodes compiled | 164,587 |
+| aggregated connections | 25,563,197 |
+| synapses they represent | 124,025,046 |
+| load and compile | 9.5 s from cache, 3.1 GB RAM |
 | trainable parameters | 25,563,197, one per connection |
-| training step (batch 4, 8 recurrent steps) | 995 ms, **8.02 GiB** VRAM |
+| forward+backward (batch 4, 8 steps) | 1,129 ms, **7.84 GiB** VRAM |
 | a dense adjacency for the same graph | 100.9 GiB |
 
 The library refuses to allocate that dense matrix rather than trying and dying:
@@ -152,7 +158,7 @@ python examples/04_mnist_connectome.py   # MNIST through a fly circuit
 ```
 
 The last one reaches 90.8% test accuracy in one epoch, in about 7 seconds on a
-laptop CPU, with 3,630 real synapses in the middle of the network.
+laptop CPU, with 3,630 real connections in the middle of the network.
 
 ## Scientific caveats
 
@@ -174,9 +180,10 @@ documented as one. ConnecTorch never invents a biological interpretation.
 The data and the prior work, with full citations on the
 [References](docs/references.md) page:
 
-- **MaleCNS v1.0** — Berg, S. et al. *Sexual dimorphism in the complete connectome
-  of the Drosophila male central nervous system.* bioRxiv 2025.10.09.680999.
-  166,691 neurons. CC-BY. <https://male-cns.janelia.org/>
+- **MaleCNS v1.0** — Berg, S. et al. *Sexual dimorphism in the complete Drosophila
+  male central nervous system connectome.* Cell **189**, 5504–5526.e15 (2026),
+  doi:10.1016/j.cell.2026.08.015. 166,691 annotated neurons. CC-BY.
+  <https://male-cns.janelia.org/>
 - **Transmitter predictions** — Eckstein, N. et al. Cell **187**, 2574–2594 (2024).
 - **FlyVis**, the closest published proof the idea works — Lappalainen, J. K. et al.
   Nature **634**, 1132–1140 (2024).

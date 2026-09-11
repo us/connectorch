@@ -71,10 +71,11 @@ DATASET_INFO: dict[str, Any] = {
     "description": "Male Drosophila central nervous system, synapse-resolution connectome",
     "license": "CC-BY-4.0",
     "citation": (
-        "Janelia FlyEM, Google Research and the University of Cambridge, "
-        "Male CNS connectome v1.0. https://neuprint.janelia.org (male-cns:v1.0)"
+        "Berg, S. et al. Sexual dimorphism in the complete Drosophila male central "
+        "nervous system connectome. Cell 189, 5504-5526.e15 (2026). "
+        "doi:10.1016/j.cell.2026.08.015"
     ),
-    "homepage": "https://neuprint.janelia.org",
+    "homepage": "https://male-cns.janelia.org/",
     "neuprint_dataset": "male-cns:v1.0",
     "variants": {name: {"file": f, "bytes": n} for name, (f, n) in VARIANTS.items()},
 }
@@ -127,6 +128,11 @@ def malecns(
         raise ConnectorchError(
             f"unknown MaleCNS variant {variant!r}; available: {sorted(VARIANTS)}."
         )
+    if min_synapses < 1:
+        raise ConnectorchError(
+            f"min_synapses must be at least 1, got {min_synapses}; a connection "
+            "with no synapses is not a connection."
+        )
     cache = Path(cache_dir) if cache_dir else default_cache_dir()
     cache = cache / "male-cns-v1.0"
 
@@ -155,7 +161,9 @@ def malecns(
             download=download,
         )
         node_columns = _align_annotations(
-            annotation_path, node_ids, annotation_columns or DEFAULT_ANNOTATIONS
+            annotation_path,
+            node_ids,
+            DEFAULT_ANNOTATIONS if annotation_columns is None else annotation_columns,
         )
 
     provenance = {

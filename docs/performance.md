@@ -4,19 +4,26 @@ Every number on this page came out of `benchmarks/`. Nothing here is an estimate
 
 ## The whole fly, on one GPU
 
-`examples/03_malecns_load.py --full --cuda` on an NVIDIA GB10 (torch 2.14.0+cu130):
+On an NVIDIA GB10 (torch 2.14.0+cu130), reproduced with:
+
+```bash
+python examples/03_malecns_load.py --download --cuda --batch-size 4 --steps 8
+```
 
 | | |
 |---|---|
-| neurons | 164,587 |
-| connections | 25,563,197 |
-| synapses | 124,025,046 |
-| load and compile from the published feather file | 16.3 s, 3.0 GB RAM |
-| compile to GPU | 1.1 s |
-| trainable parameters | 25,563,197 |
-| training step, batch 4, 8 recurrent steps | 995 ms |
-| peak VRAM | 8.02 GiB |
+| nodes compiled (`traced-only`) | 164,587 |
+| aggregated connections | 25,563,197 |
+| synapses they represent | 124,025,046 |
+| load and compile from the cached feather file | 9.5 s, 3.1 GB RAM |
+| trainable parameters | 25,563,197, one per connection |
+| forward+backward, batch 4, 8 steps | 1,129 ms |
+| peak VRAM | 7.84 GiB |
+| stored activations for that call | 6.09 GiB |
 | a dense float32 adjacency of the same graph | 100.9 GiB |
+
+The dataset annotates 166,691 neurons; 164,587 is what the default `traced-only`
+connectivity table compiles to. The two are not the same number.
 
 ## Backends
 

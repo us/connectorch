@@ -15,7 +15,7 @@ to read a dataset does not change your obligations under that license.
 | Dataset | Male CNS connectome, version 1.0 (`male-cns:v1.0`) |
 | Authors | Janelia Research Campus FlyEM project, Google Research, and the University of Cambridge |
 | Homepage | https://male-cns.janelia.org/ |
-| Paper | Berg, S. et al. *Sexual dimorphism in the complete connectome of the Drosophila male central nervous system.* bioRxiv 2025.10.09.680999 (2025). https://doi.org/10.1101/2025.10.09.680999 |
+| Paper | Berg, S. et al. *Sexual dimorphism in the complete Drosophila male central nervous system connectome.* Cell **189**, 5504–5526.e15 (2026). https://doi.org/10.1016/j.cell.2026.08.015 |
 | Source files | GCS bucket `flyem-male-cns`, prefix `v1.0/connectome-data/flat-connectome/`, readable over plain HTTPS without credentials |
 | License | Creative Commons Attribution (CC-BY 4.0) |
 
@@ -33,8 +33,9 @@ selection procedure is recorded in the sample's own provenance
 
 **If you use this data, cite the original authors, not ConnecTorch:**
 
-> Berg, S. et al. Sexual dimorphism in the complete connectome of the Drosophila
-> male central nervous system. bioRxiv 2025.10.09.680999 (2025).
+> Berg, S. et al. Sexual dimorphism in the complete Drosophila male central
+> nervous system connectome. Cell 189, 5504-5526.e15 (2026).
+> doi:10.1016/j.cell.2026.08.015
 > Data: MaleCNS v1.0, Janelia FlyEM / Google Research / Cambridge Drosophila
 > Connectomics Group. https://male-cns.janelia.org/
 

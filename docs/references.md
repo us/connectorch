@@ -8,14 +8,20 @@ publisher or the issue tracker, not quoted from memory.
 
 **MaleCNS v1.0** — the connectome this library ships a sample of and loads in full.
 
-> Berg, S. et al. *Sexual dimorphism in the complete connectome of the Drosophila
-> male central nervous system.* bioRxiv 2025.10.09.680999 (2025).
-> <https://doi.org/10.1101/2025.10.09.680999>
+> Berg, S. et al. *Sexual dimorphism in the complete Drosophila male central
+> nervous system connectome.* Cell **189**, 5504–5526.e15 (2026).
+> <https://doi.org/10.1016/j.cell.2026.08.015>
 
-The paper reports **166,691 neurons** spanning brain and ventral nerve cord.
-`ct.datasets.malecns()` loads 164,587 by default because the `traced-only`
-connectivity table only contains bodies with traced connections; pass
-`variant="full"` for the unfiltered table. Data released under **CC-BY**; the full attribution, including exactly how the
+Data released 2026-06-08; paper published 2026-09-03. The preprint remains at
+bioRxiv 2025.10.09.680999.
+
+The paper reports **166,691 annotated neurons** spanning brain and ventral nerve
+cord. `ct.datasets.malecns()` compiles **164,587 nodes and 25,563,197 aggregated
+connections** by default, because the `traced-only` connectivity table holds only
+connections between traced bodies; pass `variant="full"` for the unfiltered
+table. The two numbers describe different things and should not be swapped for
+each other: one counts annotated neurons in the dataset, the other counts nodes
+in the graph this library compiles. Data released under **CC-BY**; the full attribution, including exactly how the
 bundled sample was derived, is in `THIRD_PARTY_DATA.md` at the root of the
 repository. Project page: <https://male-cns.janelia.org/>. Produced by Janelia
 FlyEM, Google Research, and the Cambridge Drosophila Connectomics Group.

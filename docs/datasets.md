@@ -3,7 +3,10 @@
 ## MaleCNS v1.0
 
 The male *Drosophila* central nervous system, from Janelia FlyEM, Google Research
-and the University of Cambridge. CC-BY.
+and the Cambridge Drosophila Connectomics Group. Released June 2026, published in
+Cell that September, CC-BY. The dataset annotates 166,691 neurons; the default
+`traced-only` graph compiles to 164,587 nodes and 25,563,197 aggregated
+connections. See [References](references.md).
 
 ```python
 import connectorch as ct
