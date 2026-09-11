@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+data/
+*.feather
+site/
+benchmarks/results.jsonl
+
+# Working documents, not part of the published project
+/*Master Plan.md
+/plans/

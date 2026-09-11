@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "connectorch"
+version = "0.0.1"
+description = "Compile biological connectomes into trainable PyTorch networks."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "ConnecTorch contributors" }]
+keywords = ["connectome", "pytorch", "neuroscience", "sparse", "neural-networks"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = ["torch>=2.1", "numpy>=1.24", "pyarrow>=14"]
+
+[project.optional-dependencies]
+neuprint = ["neuprint-python>=0.4"]
+networkx = ["networkx>=3"]
+dev = ["pytest>=8", "pytest-cov", "ruff>=0.6", "mypy>=1.10", "pandas"]
+docs = ["mkdocs-material", "mkdocstrings[python]"]
+
+[project.scripts]
+connectorch = "connectorch.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/connectorch/connectorch"
+Issues = "https://github.com/connectorch/connectorch/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/connectorch"]
+# The bundled MaleCNS sample is data, not Python; hatchling needs telling.
+artifacts = ["src/connectorch/datasets/data/**"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+# Never touch prose. Formatting fenced code inside Markdown rewrites the
+# specification documents, which are inputs, not source.
+extend-exclude = ["*.md", "docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "NPY"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "network: requires network access and credentials",
+    "large: requires the full MaleCNS dataset and a large machine",
+    "cuda: requires a CUDA device",
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+disallow_untyped_defs = true
+files = ["src/connectorch"]

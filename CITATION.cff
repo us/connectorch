@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+title: "ConnecTorch: compile biological connectomes into trainable PyTorch networks"
+message: "If you use this software, please cite it, and cite the connectome dataset separately."
+type: software
+authors:
+  - name: "ConnecTorch contributors"
+repository-code: "https://github.com/connectorch/connectorch"
+license: MIT
+abstract: >-
+  ConnecTorch compiles an arbitrary biological wiring diagram into a sparse,
+  differentiable torch.nn.Module whose topology is fixed under gradient descent.
+  It provides a dataset-agnostic connectome intermediate representation, loaders
+  for published connectomes including the Janelia MaleCNS v1.0 dataset, and
+  gather-scatter and sparse matrix multiplication backends that never
+  materialise a dense N-by-N adjacency.
+references:
+  - type: article
+    title: "Sexual dimorphism in the complete connectome of the Drosophila male central nervous system"
+    authors:
+      - family-names: Berg
+        given-names: Stuart
+    year: 2025
+    doi: 10.1101/2025.10.09.680999
+    notes: "The MaleCNS v1.0 dataset this software loads and samples. Cite this separately when you use the data."
+  - type: article
+    title: "Connectome-constrained networks predict neural activity across the fly visual system"
+    authors:
+      - family-names: Lappalainen
+        given-names: Janne K.
+    year: 2024
+    doi: 10.1038/s41586-024-07939-3
+    notes: "Prior work that established connectome-constrained training."
+keywords:
+  - connectome
+  - pytorch
+  - computational neuroscience
+  - sparse neural networks

@@ -1,0 +1,18 @@
+"""Differentiable runtimes that execute a connectome."""
+
+from .dynamics import ACTIVATIONS, resolve_activation
+from .model import ConnectomeModel, InputProjection, count_parameters
+from .recurrent import ConnectomeRNN
+from .weights import WEIGHT_STRATEGIES, initial_edge_weights, resolve_strategy
+
+__all__ = [
+    "ConnectomeRNN",
+    "ConnectomeModel",
+    "InputProjection",
+    "count_parameters",
+    "ACTIVATIONS",
+    "resolve_activation",
+    "WEIGHT_STRATEGIES",
+    "initial_edge_weights",
+    "resolve_strategy",
+]

@@ -1,0 +1,38 @@
+site_name: ConnecTorch
+site_description: Compile biological connectomes into trainable PyTorch networks.
+repo_url: https://github.com/connectorch/connectorch
+theme:
+  name: material
+  features: [content.code.copy, navigation.sections]
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: {icon: material/weather-night, name: Dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: {icon: material/weather-sunny, name: Light mode}
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Concepts: concepts.md
+  - Connectome IR: ir.md
+  - Training networks: training.md
+  - Sparse backends: backends.md
+  - Datasets: datasets.md
+  - Performance: performance.md
+  - Scientific caveats: caveats.md
+  - References: references.md
+  - API reference: api.md
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: numpy
+            show_source: false
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - tables
