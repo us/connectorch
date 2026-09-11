@@ -3,6 +3,7 @@
   "num_nodes": 100,
   "num_edges": 3630,
   "fingerprint": "c5a303ffe2b8ff4b",
+  "content_hash": "e315ebfef3ffe885",
   "provenance": {
     "dataset": "male-cns:v1.0",
     "variant": "traced-only",

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import io
+
 import numpy as np
 import pytest
 import torch
@@ -284,10 +286,18 @@ def test_cuda_round_trip(small: Connectome) -> None:
     y.square().mean().backward()
     assert model.edge_weight.grad is not None
 
-    state = {k: v.cpu() for k, v in model.state_dict().items()}
+    # A GPU checkpoint has to load onto a CPU machine. torch.load(map_location=)
+    # is the idiom for that; a hand-rolled `{k: v.cpu() ...}` would trip over the
+    # non-tensor extra state that carries the connectome's identity.
+    saved = io.BytesIO()
+    torch.save(model.state_dict(), saved)
+    saved.seek(0)
+
     cpu_model = ConnectomeRNN(small, weights="trainable", initializer="binary")
-    cpu_model.load_state_dict(state)
+    cpu_model.load_state_dict(torch.load(saved, map_location="cpu", weights_only=False))
     assert not cpu_model.edge_weight.is_cuda
+    assert cpu_model.fingerprint == model.fingerprint
+    assert torch.equal(cpu_model.edge_weight.cpu(), model.edge_weight.detach().cpu())
 
 
 # ----------------------------------------------------------------------
@@ -343,3 +353,18 @@ def test_a_huge_backward_pass_is_flagged_before_it_is_paid(small: Connectome, mo
 def test_diagnostics_reports_the_activation_cost(small: Connectome) -> None:
     report = ConnectomeRNN(small, weights="trainable").diagnostics()
     assert report["activation_bytes_per_batch_step"] == 2 * small.num_edges * 4
+
+
+def test_a_saved_checkpoint_round_trips_through_torch_save(small: Connectome, tmp_path) -> None:
+    """The state dict holds non-tensor extra state, so it must survive torch.save."""
+    model = ConnectomeRNN(small, weights="trainable", initializer="weight")
+    path = tmp_path / "model.pt"
+    torch.save(model.state_dict(), path)
+
+    clone = ConnectomeRNN(small, weights="trainable", initializer="binary")
+    assert clone.fingerprint == model.fingerprint  # same graph
+    clone.initializer = "binary"
+    clone.load_state_dict(torch.load(path, weights_only=False))
+
+    assert torch.equal(clone.edge_weight, model.edge_weight)
+    assert clone.initializer == "weight", "the checkpoint's config travelled with it"

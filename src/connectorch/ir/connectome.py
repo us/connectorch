@@ -551,8 +551,28 @@ class Connectome:
     # identity
     # ------------------------------------------------------------------
 
+    def content_hash(self) -> str:
+        """Hash every byte of the tables, not just the structural columns.
+
+        :meth:`fingerprint` deliberately covers only what the runtime reads, so
+        two graphs that compute identically share one. That makes it the wrong
+        tool for detecting a corrupted or edited file, where a changed
+        ``cell_type`` matters as much as a changed weight. This covers the whole
+        of both tables.
+        """
+        digest = hashlib.sha256()
+        digest.update(f"connectorch-content-v{SCHEMA_VERSION}".encode())
+        for table in (self.nodes, self.edges):
+            for name in table.column_names:
+                digest.update(name.encode())
+                column = table.column(name)
+                digest.update(str(column.type).encode())
+                for buffer in column.combine_chunks().buffers():
+                    digest.update(b"" if buffer is None else buffer.to_pybytes())
+        return digest.hexdigest()[:16]
+
     def fingerprint(self) -> str:
-        """Return a stable 16-character hash of the graph's structure.
+        """Return a stable 16-character hash of the graph's *structure*.
 
         Covers the schema version, node ids, edge endpoints, and the ``weight``,
         ``synapse_count`` and ``sign`` columns: everything the runtime reads. A
@@ -613,6 +633,7 @@ class Connectome:
             "num_nodes": self.num_nodes,
             "num_edges": self.num_edges,
             "fingerprint": self.fingerprint(),
+            "content_hash": self.content_hash(),
             "provenance": self._provenance,
         }
         (directory / "metadata.json").write_text(json.dumps(metadata, indent=2, default=str))
@@ -655,12 +676,20 @@ class Connectome:
             edge_columns=edge_columns,
             provenance=metadata.get("provenance", {}),
         )
+        expected_content = metadata.get("content_hash")
+        if expected_content and obj.content_hash() != expected_content:
+            raise ConnectorchError(
+                f"{directory} failed its integrity check: metadata records content "
+                f"hash {expected_content}, the files on disk hash to "
+                f"{obj.content_hash()}. They have been modified or truncated."
+            )
         expected = metadata.get("fingerprint")
         if expected and obj.fingerprint() != expected:
             raise ConnectorchError(
-                f"{directory} failed its fingerprint check: metadata says "
-                f"{expected}, loaded data hashes to {obj.fingerprint()}. The files "
-                "have been modified or truncated."
+                f"{directory} failed its structural check: metadata records "
+                f"fingerprint {expected}, loaded data hashes to "
+                f"{obj.fingerprint()}. The graph's nodes, edges or weights differ "
+                "from what was written."
             )
         return obj
 

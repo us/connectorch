@@ -141,8 +141,25 @@ def test_load_detects_tampering(tmp_path) -> None:
     import pyarrow.parquet as pq
 
     pq.write_table(tampered.edges, path / "edges.parquet")
-    with pytest.raises(ConnectorchError, match="fingerprint"):
+    with pytest.raises(ConnectorchError, match="integrity check"):
         Connectome.load(path)
+
+
+def test_content_hash_sees_what_the_fingerprint_ignores(tmp_path) -> None:
+    """The fingerprint covers what the runtime reads; the content hash covers the files."""
+    original = Connectome(
+        nodes={"node_id": [1, 2], "cell_type": ["Mi1", "Tm9"]},
+        edges={"source": [1], "target": [2], "synapse_count": [5]},
+    )
+    annotated_differently = Connectome(
+        nodes={"node_id": [1, 2], "cell_type": ["Mi1", "SOMETHING ELSE"]},
+        edges={"source": [1], "target": [2], "synapse_count": [5]},
+    )
+    assert original.fingerprint() == annotated_differently.fingerprint()
+    assert original.content_hash() != annotated_differently.content_hash()
+
+    loaded = Connectome.load(original.save(tmp_path / "b.ct"))
+    assert loaded.content_hash() == original.content_hash()
 
 
 def test_no_pickle_on_disk(tmp_path) -> None:
