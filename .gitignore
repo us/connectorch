@@ -9,8 +9,10 @@ build/
 .mypy_cache/
 .coverage
 htmlcov/
-data/
+# Downloaded datasets, never the fixture that ships inside the package.
+/data/
 *.feather
+!src/connectorch/datasets/data/**
 site/
 benchmarks/results.jsonl
 
