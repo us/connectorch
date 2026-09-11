@@ -3,7 +3,7 @@
   "num_nodes": 100,
   "num_edges": 3630,
   "fingerprint": "c5a303ffe2b8ff4b",
-  "content_hash": "e315ebfef3ffe885",
+  "content_hash": "746bdef0d8906207",
   "provenance": {
     "dataset": "male-cns:v1.0",
     "variant": "traced-only",
@@ -29,6 +29,11 @@
       "num_nodes": 100,
       "variant": "traced-only",
       "min_synapses": 5
+    },
+    "neurotransmitters": {
+      "source": "body-neurotransmitters-male-cns-v1.0.feather",
+      "column": "consensus_nt",
+      "note": "predictions from electron microscopy images, not measurements"
     }
   }
 }

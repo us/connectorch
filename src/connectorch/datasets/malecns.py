@@ -88,6 +88,7 @@ def malecns(
     min_synapses: int = 1,
     annotations: bool = True,
     annotation_columns: dict[str, str] | None = None,
+    neurotransmitters: bool = False,
     download: bool | None = None,
 ) -> Connectome:
     """Load MaleCNS v1.0 as a :class:`~connectorch.ir.Connectome`.
@@ -106,6 +107,13 @@ def malecns(
         Drop connections below this synapse count. Recorded in provenance.
     annotations:
         Attach cell type, class and side metadata from the annotation table.
+    neurotransmitters:
+        Also attach each body's predicted transmitter as a ``neurotransmitter``
+        node column (41 MiB extra download). These are predictions from electron
+        microscopy images, not measurements, and they name the transmitter
+        released, not the sign of the connection: pass the result through
+        :func:`connectorch.transforms.infer_signs` with an explicit mapping to
+        turn them into polarity.
     annotation_columns:
         ``{source column: IR column}`` overriding :data:`DEFAULT_ANNOTATIONS`.
         The full 36-column list is in this module's docstring reference.
@@ -166,6 +174,19 @@ def malecns(
             DEFAULT_ANNOTATIONS if annotation_columns is None else annotation_columns,
         )
 
+    if neurotransmitters:
+        if node_columns is None:
+            node_columns = {"node_id": np.unique(np.concatenate([source, target]))}
+        transmitter_path = ensure_file(
+            f"{BASE_URL}/{NEUROTRANSMITTERS[0]}",
+            cache_dir=cache,
+            expected_size=NEUROTRANSMITTERS[1],
+            download=download,
+        )
+        node_columns["neurotransmitter"] = _align_transmitters(
+            transmitter_path, node_columns["node_id"]
+        )
+
     provenance = {
         "dataset": "male-cns:v1.0",
         "variant": variant,
@@ -179,6 +200,28 @@ def malecns(
         edges={"source": source, "target": target, "synapse_count": counts},
         provenance=provenance,
     )
+
+
+def _align_transmitters(path: Path, node_ids: np.ndarray) -> np.ndarray:
+    """Attach each body's consensus transmitter, empty string where there is none.
+
+    The table has one row per body in the segmentation, far more than the neurons
+    in the graph, so this is a left join onto the node set rather than a merge.
+    """
+    table = read_edge_table(path, columns=["body", "consensus_nt"])
+    body = table.column("body").to_numpy()
+    values = table.column("consensus_nt").to_pylist()
+
+    position = np.searchsorted(node_ids, body)
+    in_range = position < node_ids.size
+    matched = np.zeros(body.size, dtype=bool)
+    matched[in_range] = node_ids[position[in_range]] == body[in_range]
+
+    out = np.full(node_ids.size, "", dtype=object)
+    out[position[matched]] = [
+        "" if values[i] is None else str(values[i]) for i in np.flatnonzero(matched)
+    ]
+    return out.astype(str)
 
 
 def _align_annotations(
