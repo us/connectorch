@@ -1,6 +1,6 @@
 site_name: ConnecTorch
 site_description: Compile biological connectomes into trainable PyTorch networks.
-repo_url: https://github.com/connectorch/connectorch
+repo_url: https://github.com/us/connectorch
 theme:
   name: material
   features: [content.code.copy, navigation.sections]

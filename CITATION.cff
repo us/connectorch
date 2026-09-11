@@ -4,7 +4,7 @@ message: "If you use this software, please cite it, and cite the connectome data
 type: software
 authors:
   - name: "ConnecTorch contributors"
-repository-code: "https://github.com/connectorch/connectorch"
+repository-code: "https://github.com/us/connectorch"
 license: MIT
 abstract: >-
   ConnecTorch compiles an arbitrary biological wiring diagram into a sparse,
