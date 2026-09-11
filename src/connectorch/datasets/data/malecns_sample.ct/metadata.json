@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "num_nodes": 100,
+  "num_edges": 3630,
+  "fingerprint": "c5a303ffe2b8ff4b",
+  "provenance": {
+    "dataset": "male-cns:v1.0",
+    "variant": "traced-only",
+    "source": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/connectome-weights-male-cns-v1.0-minconf-0.5-traced-only.feather",
+    "license": "CC-BY-4.0",
+    "citation": "Janelia FlyEM, Google Research and the University of Cambridge, Male CNS connectome v1.0. https://neuprint.janelia.org (male-cns:v1.0)",
+    "filters": {
+      "min_confidence": 0.5,
+      "min_synapses": 5
+    },
+    "node_order": "sorted",
+    "aggregate_parallel_edges": true,
+    "history": [
+      {
+        "op": "subgraph",
+        "nodes_kept": 100,
+        "nodes_dropped": 163803,
+        "edges_dropped": 6232052
+      }
+    ],
+    "sample": {
+      "selection": "greedy densest subgraph over the highest-degree 4000 bodies, ties by ascending body id",
+      "num_nodes": 100,
+      "variant": "traced-only",
+      "min_synapses": 5
+    }
+  }
+}
