@@ -33,6 +33,15 @@ Specifically:
   learning objective produces an artificial model *constrained by* biology. It
   does not tell you what the fly computes.
 
+## What you can hold onto
+
+Two of these are addressable with what the dataset already gives you, and
+[Keeping the biology](biology.md) is how: the measured synapse counts can stay in
+the model as a bounded prior instead of being optimised away, and each neuron's
+polarity can be held fixed so it cannot excite some targets while inhibiting
+others. Neither makes the model a fly. Both stop it drifting further from one
+than it needs to.
+
 ## What ConnecTorch does about it
 
 Every weight strategy is a named, documented **numerical** choice, never a

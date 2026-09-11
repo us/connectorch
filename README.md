@@ -133,6 +133,32 @@ batch, steps)` computes it up front, and the model warns before a call that woul
 claim more than half the device's free memory, rather than letting you find out
 three hours into a run.
 
+## Keeping the biology in the loop
+
+Training with free weights keeps the topology and throws away everything else. On
+the bundled sample, after training:
+
+| parameterisation | `\|w\|` vs the measured synapse count | neurons that both excite and inhibit |
+|---|---|---|
+| `weights="trainable"` | 0.00x – 4.32x | 93 of 100 |
+| `BiologicalWeights(dale=True)` | 0.66x – 1.53x | 0 of 100 |
+
+```python
+from connectorch.transforms import DROSOPHILA_POLARITY, infer_signs
+
+fly = ct.datasets.malecns(download=True, neurotransmitters=True)
+fly = infer_signs(fly, DROSOPHILA_POLARITY)
+
+core = ct.nn.ConnectomeRNN(fly, weights=ct.nn.BiologicalWeights(
+    fly, gain_bounds=(0.5, 2.0), share_by="cell_type", dale=True,
+))
+```
+
+`weight = sign * measured_prior * bounded_gain`. The gain starts at 1.0 and can be
+shared across all connections between a pair of cell types, which is both far
+fewer parameters and closer to how a nervous system is organised. See
+[docs/biology.md](docs/biology.md).
+
 ## Scientific controls
 
 A claim that biological wiring helps has to be measured against wiring that is

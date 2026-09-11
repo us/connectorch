@@ -34,6 +34,19 @@ would invalidate other people's results.
   memory. The dense `[N, N]` refusal was already loud; the `O(E x B x T)` cost of
   the path the library actually recommends was not defended at all.
 
+- `BiologicalWeights`, a parameterisation that keeps the measured data in the
+  model after training: `weight = sign * synapse_count_prior * bounded_gain`,
+  with the gain optionally shared across all connections between a pair of cell
+  types. Trained on the bundled sample, free weights end between 0.00x and 4.32x
+  of the count they started at and leave 93 of 100 neurons both exciting and
+  inhibiting their targets; this keeps them within 0.66x to 1.53x with none.
+- `malecns(neurotransmitters=True)` and `transforms.infer_signs`, which turn the
+  dataset's transmitter predictions into connection polarity under a mapping the
+  caller supplies. `DROSOPHILA_POLARITY` is provided but never applied by
+  default.
+- `experiments/01_inductive_bias.py`, comparing the connectome against
+  topology-matched controls and a dense RNN at a matched parameter budget.
+
 ### Changed semantics
 
 Nothing here has been released yet, so no stored data is affected, but these
@@ -44,6 +57,10 @@ would be breaking changes after v0.1:
   synapse counts of `2**53` and `2**53+1` hashed identically. The numerical
   behaviour of the runtime is unchanged: the golden regression fixture's outputs
   and weights are bit-for-bit identical across this change.
+- Edge weights are produced by an `EdgeWeights` module rather than being a bare
+  parameter. `model.edge_weight` still reads as before and the strategy names
+  still work; a checkpoint from an earlier commit will not load, and none has
+  been released.
 - The `sign` edge column is now applied by the runtime. It was previously
   validated and then ignored, which turned an edge marked inhibitory into an
   excitatory one.

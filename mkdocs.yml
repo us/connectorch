@@ -17,6 +17,7 @@ nav:
   - Concepts: concepts.md
   - Connectome IR: ir.md
   - Training networks: training.md
+  - Keeping the biology: biology.md
   - Sparse backends: backends.md
   - Datasets: datasets.md
   - Performance: performance.md
