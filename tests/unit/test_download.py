@@ -84,6 +84,7 @@ def server():
     AwkwardServer.mode = "normal"
     yield f"http://127.0.0.1:{httpd.server_port}/f.bin"
     httpd.shutdown()
+    httpd.server_close()
 
 
 def fetch(url: str, cache_dir, **kwargs):

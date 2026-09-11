@@ -307,31 +307,37 @@ def test_activation_cost_is_reported_and_is_zero_without_gradients(small: Connec
     assert frozen.activation_bytes(8, 4) == 0, "frozen weights store no activations"
 
 
-def test_a_huge_backward_pass_is_flagged_before_it_is_paid() -> None:
-    """The warning has to carry the real number and a way out, like the dense guard."""
+def test_a_huge_backward_pass_is_flagged_before_it_is_paid(small: Connectome, monkeypatch) -> None:
+    """The warning has to carry the real number and a way out, like the dense guard.
+
+    The budget is lowered rather than the graph enlarged. Actually running a call
+    that stores tens of gibibytes would have this test killed by the OOM killer on
+    any ordinary machine, which is the very outcome the warning exists to prevent.
+    """
     import warnings
 
-    rng = np.random.default_rng(0)
-    brain = Connectome.from_edges(
-        source=rng.integers(0, 20_000, 400_000),
-        target=rng.integers(0, 20_000, 400_000),
-        nodes={"node_id": np.arange(20_000)},
-    )
-    model = ConnectomeRNN(brain, weights="trainable", output_nodes=np.arange(8))
+    model = ConnectomeRNN(small, weights="trainable")
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        model(torch.zeros(2, brain.num_nodes), steps=2)
-    assert not caught, "a small call must not nag"
+        model(torch.zeros(2, small.num_nodes), steps=2)
+    assert not caught, "a small call under the budget must not nag"
 
+    monkeypatch.setattr("connectorch.nn.recurrent._ACTIVATION_BUDGET_BYTES", 8)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        model(torch.zeros(256, brain.num_nodes), steps=64)
+        model(torch.zeros(4, small.num_nodes), steps=3)
     assert len(caught) == 1
     text = str(caught[0].message)
     assert "GiB" in text
-    assert "batch 256" in text and "64 steps" in text
+    assert "batch 4" in text and "3 steps" in text
+    assert f"{small.num_edges:,} edges" in text
     assert "torch.no_grad()" in text
+
+    with warnings.catch_warnings(record=True) as caught, torch.no_grad():
+        warnings.simplefilter("always")
+        model(torch.zeros(4, small.num_nodes), steps=3)
+    assert not caught, "nothing is stored under no_grad, so nothing to warn about"
 
 
 def test_diagnostics_reports_the_activation_cost(small: Connectome) -> None:
