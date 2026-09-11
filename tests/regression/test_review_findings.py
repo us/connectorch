@@ -276,7 +276,7 @@ def test_shared_parameters_are_counted_once() -> None:
     brain = Connectome.from_edges([0], [1], weight=[1.0])
     first = ConnectomeRNN(brain, weights="trainable", initializer="weight")
     second = ConnectomeRNN(brain, weights="trainable", initializer="weight")
-    second.edge_weight = first.edge_weight
+    second.weights.weight = first.weights.weight
 
     counts = count_parameters(nn.ModuleList([first, second]))
     assert counts == {"total": 1, "connectome": 1, "other": 0}

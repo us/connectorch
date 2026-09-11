@@ -27,6 +27,7 @@ from ..backends import build_propagator
 from ..exceptions import ConnectorchError
 from ..ir import Connectome
 from .dynamics import resolve_activation
+from .parameterisation import EdgeWeights, FixedWeights, FreeWeights
 from .weights import WEIGHT_STRATEGIES, initial_edge_weights, resolve_strategy
 
 __all__ = ["ConnectomeRNN"]
@@ -64,9 +65,15 @@ class ConnectomeRNN(nn.Module):
         Biological node ids that are read out, in the order they appear in the
         output. ``None`` means every node, in index order.
     weights:
-        ``"trainable"`` makes :attr:`edge_weight` an ``nn.Parameter``. Any other
-        value from :data:`~connectorch.nn.weights.WEIGHT_STRATEGIES` makes it a
-        fixed buffer holding that strategy's values.
+        ``"trainable"`` gives every connection its own free parameter. Any other
+        name from :data:`~connectorch.nn.weights.WEIGHT_STRATEGIES` freezes the
+        weights at that strategy's values.
+
+        You can also pass an
+        :class:`~connectorch.nn.parameterisation.EdgeWeights` module, which is how
+        the biology is kept in the loop rather than optimised away::
+
+            weights=ct.nn.BiologicalWeights(brain, share_by="cell_type", dale=True)
     initializer:
         Which strategy provides the initial values when ``weights="trainable"``.
         ``"auto"`` (the default) uses synapse counts if the connectome has them,
@@ -102,9 +109,9 @@ class ConnectomeRNN(nn.Module):
     """
 
     edge_index: Tensor
-    edge_weight: Tensor
     input_index: Tensor
     output_index: Tensor
+    weights: EdgeWeights
 
     def __init__(
         self,
@@ -112,7 +119,7 @@ class ConnectomeRNN(nn.Module):
         *,
         input_nodes: np.ndarray | list | None = None,
         output_nodes: np.ndarray | list | None = None,
-        weights: str = "trainable",
+        weights: str | EdgeWeights = "trainable",
         initializer: str = "auto",
         activation: str | Callable[[Tensor], Tensor] = "tanh",
         leak: float = 1.0,
@@ -128,31 +135,42 @@ class ConnectomeRNN(nn.Module):
             raise ValueError(f"leak must be in (0, 1], got {leak}.")
 
         dtype = dtype or torch.get_default_dtype()
-        trainable = weights == "trainable"
-        if not trainable and weights not in WEIGHT_STRATEGIES:
-            raise ValueError(
-                f"unknown weights={weights!r}; use 'trainable' or one of "
-                f"{sorted(WEIGHT_STRATEGIES)}."
-            )
-        strategy = resolve_strategy(connectome, initializer if trainable else weights)
+        given_module = isinstance(weights, EdgeWeights)
+        if isinstance(weights, EdgeWeights):
+            if weights.num_edges != connectome.num_edges:
+                raise ConnectorchError(
+                    f"the weight module covers {weights.num_edges:,} connections "
+                    f"but this connectome has {connectome.num_edges:,}. It has to "
+                    "be built from the same connectome."
+                )
+            trainable = any(p.requires_grad for p in weights.parameters())
+            strategy = str(weights.describe().get("kind", "custom"))
+        else:
+            trainable = weights == "trainable"
+            if not trainable and weights not in WEIGHT_STRATEGIES:
+                raise ValueError(
+                    f"unknown weights={weights!r}; use 'trainable', one of "
+                    f"{sorted(WEIGHT_STRATEGIES)}, or an EdgeWeights module."
+                )
+            strategy = resolve_strategy(connectome, initializer if trainable else weights)
 
         self.num_nodes = connectome.num_nodes
         self.num_edges = connectome.num_edges
         self.leak = float(leak)
         self.activation_name = activation if isinstance(activation, str) else "custom"
         self._activation = resolve_activation(activation)
-        self.weights_mode = weights
+        self.weights_mode = strategy if given_module else str(weights)
         self.initializer = strategy
         self.fingerprint = connectome.fingerprint()
 
         edge_index = torch.as_tensor(connectome.edge_index, dtype=torch.int64)
         self.register_buffer("edge_index", edge_index)
 
-        values = torch.as_tensor(initial_edge_weights(connectome, strategy), dtype=dtype)
-        if trainable:
-            self.edge_weight = nn.Parameter(values)
+        if isinstance(weights, EdgeWeights):
+            self.weights = weights
         else:
-            self.register_buffer("edge_weight", values)
+            values = torch.as_tensor(initial_edge_weights(connectome, strategy), dtype=dtype)
+            self.weights = FreeWeights(values) if trainable else FixedWeights(values)
 
         input_index = _resolve_nodes(connectome, input_nodes)
         output_index = _resolve_nodes(connectome, output_nodes)
@@ -179,6 +197,16 @@ class ConnectomeRNN(nn.Module):
             self.to(device)
 
     # ------------------------------------------------------------------
+
+    @property
+    def edge_weight(self) -> Tensor:
+        """The current weight of every connection, in canonical edge order.
+
+        Produced by :attr:`weights`; with a free parameterisation this *is* the
+        parameter, with a biological one it is the measured prior times a bounded
+        learned gain.
+        """
+        return self.weights()
 
     @property
     def num_input_nodes(self) -> int:
@@ -290,8 +318,8 @@ class ConnectomeRNN(nn.Module):
         if state is None:
             return torch.zeros(
                 (self.num_nodes, batch),
-                dtype=self.edge_weight.dtype,
-                device=self.edge_weight.device,
+                dtype=self.weights.dtype,
+                device=self.weights.device,
             )
         if state.shape != (batch, self.num_nodes):
             raise ValueError(
@@ -340,14 +368,21 @@ class ConnectomeRNN(nn.Module):
 
         Returns zero when no gradient is being recorded, since nothing is stored.
         """
-        if not (self.edge_weight.requires_grad and torch.is_grad_enabled()):
+        trains = any(p.requires_grad for p in self.weights.parameters())
+        if not (trains and torch.is_grad_enabled()):
             return 0
-        return 2 * self.num_edges * batch * steps * self.edge_weight.element_size()
+        return (
+            2
+            * self.num_edges
+            * batch
+            * steps
+            * torch.empty((), dtype=self.weights.dtype).element_size()
+        )
 
     def _warn_if_activations_are_huge(self, batch: int, steps: int) -> None:
         """Say what this backward pass will cost before it is paid, not after."""
         needed = self.activation_bytes(batch, steps)
-        if needed <= _memory_budget(self.edge_weight.device):
+        if needed <= _memory_budget(self.weights.device):
             return
         gib = needed / 2**30
         warnings.warn(
@@ -363,7 +398,7 @@ class ConnectomeRNN(nn.Module):
         """Warn before allocating an output trajectory that dwarfs the model itself."""
         elements = batch * steps * self.num_output_nodes
         if elements > _TRAJECTORY_WARN_ELEMENTS:
-            gib = elements * self.edge_weight.element_size() / 2**30
+            gib = elements * torch.empty((), dtype=self.weights.dtype).element_size() / 2**30
             warnings.warn(
                 f"this call will build a [{batch}, {steps}, "
                 f"{self.num_output_nodes}] output trajectory, about {gib:.1f} GiB. "
@@ -395,7 +430,7 @@ class ConnectomeRNN(nn.Module):
                 "max_abs_row_sum": float(row_sum.max()),
                 "activation_bytes_per_batch_step": 2
                 * self.num_edges
-                * self.edge_weight.element_size(),
+                * torch.empty((), dtype=self.weights.dtype).element_size(),
             }
 
     def extra_repr(self) -> str:

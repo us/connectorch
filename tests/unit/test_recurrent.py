@@ -101,8 +101,8 @@ def test_trainable_weights_receive_finite_gradients(small: Connectome) -> None:
 def test_fixed_weights_are_not_parameters(small: Connectome) -> None:
     model = ConnectomeRNN(small, weights="weight")
     assert list(model.parameters()) == []
-    assert "edge_weight" in dict(model.named_buffers())
     assert not model.edge_weight.requires_grad
+    assert model.weights.describe()["parameters"] == 0
 
 
 def test_gradcheck_on_a_tiny_double_precision_model() -> None:
@@ -115,7 +115,7 @@ def test_gradcheck_on_a_tiny_double_precision_model() -> None:
     x = torch.randn(2, 3, dtype=torch.float64)
 
     def run(weight: torch.Tensor) -> torch.Tensor:
-        return torch.func.functional_call(model, {"edge_weight": weight}, (x,), {"steps": 3})
+        return torch.func.functional_call(model, {"weights.weight": weight}, (x,), {"steps": 3})
 
     assert torch.autograd.gradcheck(run, (model.edge_weight.detach().requires_grad_(True),))
 
