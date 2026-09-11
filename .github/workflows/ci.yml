@@ -30,11 +30,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install
-        run: uv pip install --system -e ".[dev,networkx]"
+        run: |
+          uv venv
+          uv pip install -e ".[dev,networkx]"
       # The large MaleCNS files are never fetched in PR CI; the bundled sample
       # covers the dataset path offline.
       - name: Test
-        run: pytest -q -m "not network and not large and not cuda" --cov=connectorch --cov-report=term-missing
+        run: uv run pytest -q -m "not network and not large and not cuda" --cov=connectorch --cov-report=term-missing
 
   typecheck:
     runs-on: ubuntu-latest
@@ -43,8 +45,10 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
-      - run: uv pip install --system -e ".[dev]"
-      - run: mypy --ignore-missing-imports src/connectorch || true
+      - run: |
+          uv venv
+          uv pip install -e ".[dev]"
+      - run: uv run mypy --ignore-missing-imports src/connectorch || true
 
   examples:
     runs-on: ubuntu-latest
@@ -53,8 +57,10 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
-      - run: uv pip install --system -e .
+      - run: |
+          uv venv
+          uv pip install -e .
       # An example that no longer runs is a broken promise in the README.
-      - run: python examples/01_toy_connectome.py
-      - run: python examples/02_train_connectome.py
-      - run: python examples/03_malecns_load.py
+      - run: uv run python examples/01_toy_connectome.py
+      - run: uv run python examples/02_train_connectome.py
+      - run: uv run python examples/03_malecns_load.py
