@@ -44,7 +44,7 @@ def make_graph(num_nodes: int, num_edges: int, seed: int = 0) -> torch.Tensor:
 
 
 def timed(fn, *, device: str, warmup: int = 3, iters: int = 10) -> float:
-    """Median-ish wall time per call in milliseconds, with the device synchronised."""
+    """Mean wall time per call in milliseconds, with the device synchronised."""
     for _ in range(warmup):
         fn()
     if device == "cuda":
