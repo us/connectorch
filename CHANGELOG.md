@@ -5,6 +5,30 @@ All notable changes to this project are documented here. Versions follow
 semantics of the runtime is called out explicitly, because a silent change there
 would invalidate other people's results.
 
+## 0.1.0 (2026-09-11)
+
+
+### Features
+
+* add a content hash beside the structural fingerprint ([4b3d77e](https://github.com/us/connectorch/commit/4b3d77ef466e6f0e72dabe769bb37efa9b7a7b0e))
+* compile biological connectomes into trainable PyTorch networks ([0e3ec5e](https://github.com/us/connectorch/commit/0e3ec5e5acdce74b66ec29f9d8aed9ab5ce1acc7))
+* keep the measured synapse counts and polarity through training ([51fa277](https://github.com/us/connectorch/commit/51fa27728fa54f5b564bece1c713e8ba5f55b264))
+* load neurotransmitter predictions and turn them into connection polarity ([db945ce](https://github.com/us/connectorch/commit/db945cedc6045a4e13688fef835d91c8cd156b15))
+
+
+### Bug Fixes
+
+* **examples:** make the quoted benchmark reproducible ([864d496](https://github.com/us/connectorch/commit/864d49674d3287eabda3f857165cb3756f8ff93a))
+* require neuprint-python 0.6.3 for the omit_rois argument ([432a54f](https://github.com/us/connectorch/commit/432a54fe2aa267fc7417a5993c9c2abbce0fc400))
+* ship the bundled MaleCNS sample in the repository ([5856d1b](https://github.com/us/connectorch/commit/5856d1b977f2caa89ab57b838746f009f6a17bad))
+
+
+### Documentation
+
+* cite the published MaleCNS paper and separate its two neuron counts ([67e8530](https://github.com/us/connectorch/commit/67e85309a8864737976f34f1a2240841c9a86eed))
+* **experiments:** record the result, which is negative ([4bbfb64](https://github.com/us/connectorch/commit/4bbfb645099aeb85bdbf850e1a87cc094769af87))
+* explain what training does to the biology, and measure it ([8411d2a](https://github.com/us/connectorch/commit/8411d2a6832bc78090d9af4585fc9d0393264969))
+
 ## [Unreleased]
 
 ### Added
