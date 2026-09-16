@@ -43,6 +43,10 @@ class Propagator(nn.Module):
     #: materialising a dense ``[N, N]`` tensor.
     supports_sparse_backward: bool = True
 
+    #: Whether the existing per-edge/batch saved-activation estimate applies.
+    #: False does not mean the backend uses no activation or workspace memory.
+    saves_edge_batch_activations: bool = True
+
     def __init__(self, edge_index: Tensor, num_nodes: int) -> None:
         super().__init__()
         if edge_index.dim() != 2 or edge_index.shape[0] != 2:
@@ -126,7 +130,7 @@ def build_propagator(
     Parameters
     ----------
     name:
-        ``"auto"``, ``"dense"``, ``"sparse_mm"`` or ``"scatter"``.
+        ``"auto"``, ``"dense"``, ``"sparse_mm"``, ``"scatter"`` or ``"metal_csr"``.
     trainable:
         Whether the edge weights will require gradients. This decides ``"auto"``
         and gates the backends that cannot produce gradients cheaply.
@@ -141,7 +145,7 @@ def build_propagator(
     0.24 GiB through scatter, where a dense float32 ``[N, N]`` is 9.3 GiB. Forward
     only, CSR is the fastest option at 0.16 ms against scatter's 1.76 ms.
     """
-    from . import dense, scatter, sparse_mm  # noqa: F401  (registration side effect)
+    from . import dense, metal_csr, scatter, sparse_mm  # noqa: F401 (registration side effect)
 
     if name == "auto":
         name = "scatter" if trainable else "sparse_mm"
