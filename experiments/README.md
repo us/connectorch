@@ -71,7 +71,56 @@ connections the dataset measured at hundreds of synapses. Those arms score well
 **We are not reporting this as evidence for connectome-constrained networks. It
 is evidence against, on this task.**
 
+## 02 — Motion direction on the real early-visual circuit
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=0 python experiments/02_motion.py --seeds 5 --epochs 3
+```
+
+Exp 01's negative needed a follow-up on the connectome's home turf: the
+early motion pathway (L1 → Mi1/Mi4/Mi9 → T4, 55k edges into T4 in
+traced-only, min_synapses=5), 24 columnar types, 41,826 nodes / 262,585
+edges. Input is a Gaussian bump sweeping across the 36 published optic-lobe
+hex columns, injected into one L1 cell per column; each sample starts at a
+random position and covers only part of the range, so direction has to come
+from local motion, not endpoints. Readout is the T4a-d mean pool (the four
+biological direction channels) plus a 4→2 linear layer. Same 7 arms,
+5 seeds, matched budgets (262,595 vs 262,154 params).
+
+### What it found
+
+| arm | test accuracy | `\|w\|` / synapse-count prior |
+|---|---|---|
+| `dense_rnn` | 0.7625 ± 0.0864 | n/a |
+| `random` | 0.7555 ± 0.0137 | 0.02 – 1.92 |
+| `real` | 0.7422 ± 0.0173 | 0.08 – 2.05 |
+| `degree_preserving` | 0.7383 ± 0.0070 | 0.00 – 2.02 |
+| `shuffled_weights` | 0.7328 ± 0.0186 | 0.01 – 2.14 |
+| `biological` | 0.6879 ± 0.0968 | 0.84 – 1.20 |
+| `biological_shared` | 0.5570 ± 0.0845 | 0.86 – 1.17 |
+
+The second honest negative: even on its home circuit and a sequential,
+sensory-mapped task, the real wiring is indistinguishable from a random
+graph of the same size (0.7422 vs 0.7555, spread 0.014–0.019). The dense
+RNN is on top again, and the biologically constrained arms pay the
+constraint price again. Unconstrained arms end with connections driven to
+zero or doubled, i.e. they score while no longer being the connectome.
+
+**We are not reporting this as evidence for connectome-constrained
+networks either. Two tasks, two negatives.**
+
+Requires downloading annotations (14 MB) + traced-only edges (508 MB);
+note the sandbox-proxy 403 on GCS, use a direct connection
+(`NO_PROXY=$NO_PROXY,storage.googleapis.com`).
+
 ### What this does not show
+
+Twelve steps of a 1-D sweep is still a toy stimulus, the L1-per-column
+sampling throws away most of the retina, and T5/lobula outputs are not in
+the readout. The next step that could still matter: full 2-D hex layout,
+naturalistic optic flow, and T4+T5 readout.
+
+### What this does not show (exp 01)
 
 MNIST is a static image task given to a recurrent network, which is not what
 either a fly or an RNN is for. A hundred neurons drawn from across the CNS are
