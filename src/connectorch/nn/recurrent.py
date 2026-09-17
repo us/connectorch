@@ -87,12 +87,15 @@ class ConnectomeRNN(nn.Module):
     bias:
         Add a per-neuron learnable bias inside the activation.
     backend:
-        ``"auto"``, ``"scatter"``, ``"sparse_mm"`` or ``"dense"``. ``"auto"``
+        ``"auto"``, ``"scatter"``, ``"sparse_mm"``, ``"dense"`` or ``"metal_csr"``. ``"auto"``
         selects ``"scatter"`` when the weights are trainable, because the backward
         pass of sparse matrix multiplication materialises a dense ``[N, N]``
         gradient, and ``"sparse_mm"`` otherwise. The forward advantage of
         ``"sparse_mm"`` is large on CUDA and at larger batches, and reverses on
         CPU at batch 1, where ``"scatter"`` is faster; see the benchmarks.
+        Select ``"metal_csr"`` explicitly for native float32 Apple GPU training
+        on ``device="mps"``; it requires ``torch.mps.compile_shader`` and supports
+        first-order gradients without dense adjacency or per-edge/batch messages.
 
     Examples
     --------
@@ -354,11 +357,10 @@ class ConnectomeRNN(nn.Module):
             self.leak = float(state["leak"])  # type: ignore[arg-type]
 
     def activation_bytes(self, batch: int, steps: int) -> int:
-        """Bytes of per-edge activations backpropagation will hold for this call.
+        """Estimate saved per-edge/batch activations, not total training memory.
 
-        The library refuses to allocate a dense ``[N, N]`` adjacency, but the path
-        it recommends instead has its own appetite: every recurrent step stores
-        two ``[num_edges, batch]`` tensors for the backward pass, the gathered
+        The scatter training path stores two ``[num_edges, batch]`` tensors
+        per recurrent step for the backward pass, the gathered
         source states and the weighted messages. That is
 
             2 * num_edges * batch * steps * itemsize
@@ -366,10 +368,14 @@ class ConnectomeRNN(nn.Module):
         which is linear in everything and easy to walk into. On MaleCNS
         (25,563,197 connections) a batch of 32 over 16 steps wants about 104 GiB.
 
-        Returns zero when no gradient is being recorded, since nothing is stored.
+        Returns zero when no gradient is being recorded or when the backend
+        avoids saved per-edge/batch tensors, as ``metal_csr`` does. Neuron states,
+        edge values, gradients, topology, and other workspace still consume memory.
         """
         trains = any(p.requires_grad for p in self.weights.parameters())
-        if not (trains and torch.is_grad_enabled()):
+        if not (
+            trains and torch.is_grad_enabled() and self.propagator.saves_edge_batch_activations
+        ):
             return 0
         return (
             2
@@ -428,7 +434,8 @@ class ConnectomeRNN(nn.Module):
                 "weight_std": float(weight.std()) if weight.numel() > 1 else 0.0,
                 "weight_absmax": float(weight.abs().max()),
                 "max_abs_row_sum": float(row_sum.max()),
-                "activation_bytes_per_batch_step": 2
+                "activation_bytes_per_batch_step": int(self.propagator.saves_edge_batch_activations)
+                * 2
                 * self.num_edges
                 * torch.empty((), dtype=self.weights.dtype).element_size(),
             }

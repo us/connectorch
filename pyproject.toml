@@ -59,6 +59,7 @@ markers = [
     "network: requires network access and credentials",
     "large: requires the full MaleCNS dataset and a large machine",
     "cuda: requires a CUDA device",
+    "mps: requires an Apple GPU and torch.mps.compile_shader",
 ]
 
 [tool.mypy]

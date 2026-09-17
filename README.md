@@ -107,6 +107,7 @@ connectome has an edge.
 |---|---|---|
 | `scatter` | gather source states, `index_add` into targets | **training** |
 | `sparse_mm` | CSR adjacency, `torch.sparse.mm` | inference, fixed weights |
+| `metal_csr` | native Metal CSR forward and backward kernels | explicit Apple GPU training/inference; CPU reference |
 | `dense` | materialises `[N, N]` | correctness oracle, tiny graphs only |
 | `auto` | `scatter` if the weights are trainable, else `sparse_mm` | default |
 
@@ -123,6 +124,25 @@ A dense float32 `[50,000 x 50,000]` is 9.3 GiB, which is what that memory
 figure is. Run `python benchmarks/sparse_backends.py` to reproduce the whole table;
 `benchmarks/gb10-results.jsonl` holds the numbers above.
 
+### Apple GPU
+
+Use `ct.nn.ConnectomeRNN(brain, backend="metal_csr").to("mps")` explicitly.
+The existing `auto` selection remains unchanged. Native MPS execution uses
+float32 and requires an MPS-enabled PyTorch build exposing
+`torch.mps.compile_shader`; shader compilation is lazy. It supports first-order
+state and edge-value gradients, including differentiably parameterized weights,
+with fixed connectivity. Run with `PYTORCH_ENABLE_MPS_FALLBACK=0`.
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=0 python examples/apple_metal.py
+python examples/apple_metal.py --device cpu --dtype float64
+```
+
+The CPU path is an explicit numerical reference. See
+[backend requirements and limitations](docs/backends.md#apple-gpu-explicit-metal_csr)
+for capability checks, dtype support and checkpoint portability. No Apple GPU
+speedup is inferred from the CUDA measurements above.
+
 ## The other memory invariant
 
 Refusing a dense `[N, N]` is only half the job. Backpropagation through the
@@ -132,6 +152,11 @@ batch 4 over 8 steps, and 104 GiB at batch 32 over 16. `model.activation_bytes(
 batch, steps)` computes it up front, and the model warns before a call that would
 claim more than half the device's free memory, rather than letting you find out
 three hours into a run.
+
+`metal_csr` avoids these edge-by-batch message tensors as well as dense adjacency
+matrices. Recurrent states, output trajectories, parameters, graph caches,
+gradients and optimizer state still occupy memory; this is not a zero-memory
+training claim.
 
 ## Keeping the biology in the loop
 
