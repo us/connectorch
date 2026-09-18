@@ -11,11 +11,17 @@ __all__ = ["ACTIVATIONS", "resolve_activation"]
 
 #: Activation name -> function. ``identity`` exists so the analytic recurrence
 #: tests can check the linear algebra without a nonlinearity in the way.
+#: ``threshold_linear`` is the graded FlyVis-style output nonlinearity:
+#: silent below threshold, linear above. Combined with a per-neuron bias the
+#: threshold becomes learnable per neuron; combined with per-type leak it is
+#: the closest this runtime gets to the published fly motion dynamics
+#: without spike machinery.
 ACTIVATIONS: dict[str, Callable[[Tensor], Tensor]] = {
     "tanh": torch.tanh,
     "relu": torch.relu,
     "sigmoid": torch.sigmoid,
     "softplus": torch.nn.functional.softplus,
+    "threshold_linear": lambda x: torch.clamp(x - 1.0, min=0.0),
     "identity": lambda x: x,
 }
 

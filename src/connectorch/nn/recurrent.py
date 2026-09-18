@@ -18,21 +18,28 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Callable
+from typing import cast
 
 import numpy as np
 import torch
 from torch import Tensor, nn
 
-from ..backends import build_propagator
+from ..backends import Propagator, build_propagator
 from ..exceptions import ConnectorchError
 from ..ir import Connectome
 from .dynamics import resolve_activation
 from .parameterisation import EdgeWeights, FixedWeights, FreeWeights
 from .weights import WEIGHT_STRATEGIES, initial_edge_weights, resolve_strategy
 
-__all__ = ["ConnectomeRNN"]
+__all__ = ["ConnectomeRNN", "MAX_SYNAPTIC_DELAY"]
 
 _TRAJECTORY_WARN_ELEMENTS = 100_000_000
+
+#: Largest synaptic delay, in recurrent steps. Bounds the history buffer at
+#: ``MAX_SYNAPTIC_DELAY + 1`` states of ``[N, B]``. Heterogeneous delays are
+#: the mechanism behind every published fly motion computation (fast Mi1/Tm3
+#: center against slow Mi4/Mi9 flanks); a uniform delay is only a lag.
+MAX_SYNAPTIC_DELAY = 4
 
 #: Fraction of a device's free memory that stored activations may claim before
 #: the user is warned. Below this there is nothing worth interrupting them about.
@@ -81,9 +88,31 @@ class ConnectomeRNN(nn.Module):
         the choice on the model. Ignored when the weights are fixed.
     activation:
         Name from :data:`~connectorch.nn.dynamics.ACTIVATIONS`, or a callable.
+        ``"threshold_linear"`` is the graded FlyVis-style output nonlinearity
+        (silent below threshold, linear above); with ``bias=True`` the
+        threshold is learnable per neuron.
     leak:
         Mixing coefficient in ``(0, 1]``. ``1.0`` replaces the state each step;
         smaller values give the neuron a memory of its previous state.
+    leak_by:
+        Optional ``{group: leak}`` mapping that gives different neuron groups
+        different memories, e.g. fast photoreceptor input and slow integrators.
+        Groups are read from the ``leak_column`` node column; neurons whose
+        group is absent from the mapping fall back to ``leak``. ``None`` (the
+        default) uses ``leak`` for every neuron.
+    leak_column:
+        Node column that ``leak_by`` keys on. Defaults to ``"cell_type"``.
+    delay_by:
+        Optional ``{source group: steps}`` mapping of synaptic delays. An edge
+        whose *source* neuron belongs to group ``g`` is delivered
+        ``delay_by[g]`` steps late, so slow flanks (Mi4/Mi9) and fast centers
+        (Mi1/Tm3) arrive at T4 at different times, which is the coincidence
+        mechanism behind direction selectivity. Groups are read from the
+        ``delay_column`` node column; edges from unmapped groups have delay 0.
+        Each value must be an integer in ``[0, MAX_SYNAPTIC_DELAY]``. ``None``
+        (the default) is exactly the old behavior: every edge has delay 0.
+    delay_column:
+        Node column that ``delay_by`` keys on. Defaults to ``"cell_type"``.
     bias:
         Add a per-neuron learnable bias inside the activation.
     backend:
@@ -115,6 +144,8 @@ class ConnectomeRNN(nn.Module):
     input_index: Tensor
     output_index: Tensor
     weights: EdgeWeights
+    leak_vec: Tensor | None
+    delay_propagators: nn.ModuleList
 
     def __init__(
         self,
@@ -126,6 +157,10 @@ class ConnectomeRNN(nn.Module):
         initializer: str = "auto",
         activation: str | Callable[[Tensor], Tensor] = "tanh",
         leak: float = 1.0,
+        leak_by: dict[str, float] | None = None,
+        leak_column: str = "cell_type",
+        delay_by: dict[str, int] | None = None,
+        delay_column: str = "cell_type",
         bias: bool = False,
         backend: str = "auto",
         dtype: torch.dtype | None = None,
@@ -182,6 +217,14 @@ class ConnectomeRNN(nn.Module):
 
         if bias:
             self.bias = nn.Parameter(torch.zeros(self.num_nodes, dtype=dtype))
+            if self.activation_name == "threshold_linear":
+                # The threshold-linear unit fires above messages == 1. A zero
+                # bias would start the whole network silent, with zero gradient
+                # everywhere and no way back. Starting the bias at the
+                # threshold makes the unit a ReLU at birth; training then
+                # moves each neuron's effective threshold where the task pays.
+                with torch.no_grad():
+                    self.bias.fill_(1.0)
         else:
             self.register_parameter("bias", None)
 
@@ -190,6 +233,31 @@ class ConnectomeRNN(nn.Module):
             backend, edge_index, connectome.num_nodes, trainable=trainable
         )
         self.backend = getattr(self.propagator, "backend_name", backend)
+
+        self.leak_by = dict(leak_by) if leak_by is not None else None
+        self.leak_column = leak_column
+        leak_vec = _leak_vector(connectome, float(leak), leak_by, leak_column, dtype)
+        if leak_vec is not None:
+            self.register_buffer("leak_vec", leak_vec)
+        else:
+            self.leak_vec = None
+
+        self.delay_by = {k: int(v) for k, v in delay_by.items()} if delay_by else None
+        self.delay_column = delay_column
+        delay_values, delay_masks = _delay_groups(connectome, delay_by, delay_column)
+        self.delay_values: list[int] = delay_values
+        self.max_delay: int = max(delay_values) if delay_values else 0
+        self.delay_propagators = nn.ModuleList()
+        for i, mask in enumerate(delay_masks):
+            self.register_buffer(f"delay_mask_{i}", torch.as_tensor(mask, dtype=torch.int64))
+            self.delay_propagators.append(
+                build_propagator(
+                    backend,
+                    edge_index[:, torch.as_tensor(mask)],
+                    connectome.num_nodes,
+                    trainable=trainable,
+                )
+            )
 
         # load_state_dict writes edge_index directly into our buffer; the
         # backend's derived layout has to follow or the model would propagate
@@ -264,18 +332,46 @@ class ConnectomeRNN(nn.Module):
         weight = self.edge_weight
         outputs = []
 
-        for t in range(steps):
-            messages = self.propagator(h, weight).index_add(0, self.input_index, drive[:, t, :].t())
-            if self.bias is not None:
-                messages = messages + self.bias.unsqueeze(-1)
-            activated = self._activation(messages)
-            h = (1.0 - self.leak) * h + self.leak * activated
-            outputs.append(h.index_select(0, self.output_index).t())
+        if self.max_delay == 0:
+            for t in range(steps):
+                messages = self.propagator(h, weight).index_add(
+                    0, self.input_index, drive[:, t, :].t()
+                )
+                if self.bias is not None:
+                    messages = messages + self.bias.unsqueeze(-1)
+                activated = self._activation(messages)
+                h = self._apply_leak(h, activated)
+                outputs.append(h.index_select(0, self.output_index).t())
+        else:
+            # Delayed delivery: an edge from source group g is computed from
+            # the state `delay_by[g]` steps ago. History starts full of the
+            # initial state, i.e. the network rests before the stimulus.
+            history: list[Tensor] = [h] * (self.max_delay + 1)
+            for t in range(steps):
+                messages = torch.zeros_like(h)
+                for i, d in enumerate(self.delay_values):
+                    propagator = self.delay_propagators[i]
+                    mask = getattr(self, f"delay_mask_{i}")
+                    messages = messages + propagator(history[-1 - d], weight[mask])
+                messages = messages.index_add(0, self.input_index, drive[:, t, :].t())
+                if self.bias is not None:
+                    messages = messages + self.bias.unsqueeze(-1)
+                activated = self._activation(messages)
+                h = self._apply_leak(h, activated)
+                history.append(h)
+                del history[0]
+                outputs.append(h.index_select(0, self.output_index).t())
 
         y = torch.stack(outputs, dim=1)
         return (y, h.t()) if return_state else y
 
     # ------------------------------------------------------------------
+
+    def _apply_leak(self, h: Tensor, activated: Tensor) -> Tensor:
+        """Mix the old state with the new activation, per neuron if configured."""
+        if self.leak_vec is not None:
+            return (1.0 - self.leak_vec) * h + self.leak_vec * activated
+        return (1.0 - self.leak) * h + self.leak * activated
 
     def _prepare_input(self, x: Tensor, steps: int | None) -> tuple[Tensor, int]:
         """Normalise ``x`` to ``[batch, steps, num_input_nodes]`` and settle ``steps``."""
@@ -344,6 +440,10 @@ class ConnectomeRNN(nn.Module):
             "weights_mode": self.weights_mode,
             "initializer": self.initializer,
             "leak": self.leak,
+            "leak_by": dict(self.leak_by) if self.leak_by is not None else None,
+            "leak_column": self.leak_column,
+            "delay_by": dict(self.delay_by) if self.delay_by is not None else None,
+            "delay_column": self.delay_column,
             "activation": self.activation_name,
         }
 
@@ -355,6 +455,9 @@ class ConnectomeRNN(nn.Module):
                 setattr(self, f"{name}_name" if name == "activation" else name, state[name])
         if "leak" in state:
             self.leak = float(state["leak"])  # type: ignore[arg-type]
+        for name in ("leak_by", "leak_column", "delay_by", "delay_column"):
+            if name in state:
+                setattr(self, name, state[name])
 
     def activation_bytes(self, batch: int, steps: int) -> int:
         """Estimate saved per-edge/batch activations, not total training memory.
@@ -434,6 +537,8 @@ class ConnectomeRNN(nn.Module):
                 "weight_std": float(weight.std()) if weight.numel() > 1 else 0.0,
                 "weight_absmax": float(weight.abs().max()),
                 "max_abs_row_sum": float(row_sum.max()),
+                "max_delay": self.max_delay,
+                "leak_groups": len(self.leak_by) if self.leak_by is not None else 0,
                 "activation_bytes_per_batch_step": int(self.propagator.saves_edge_batch_activations)
                 * 2
                 * self.num_edges
@@ -441,17 +546,91 @@ class ConnectomeRNN(nn.Module):
             }
 
     def extra_repr(self) -> str:
+        extras = ""
+        if self.leak_by:
+            extras += f", leak_by={len(self.leak_by)} groups"
+        if self.max_delay:
+            extras += f", delays={self.delay_values}"
         return (
             f"nodes={self.num_nodes:,}, edges={self.num_edges:,}, "
             f"weights={self.weights_mode!r}, initializer={self.initializer!r}, "
             f"activation={self.activation_name!r}, leak={self.leak}, "
-            f"backend={self.backend!r}"
+            f"backend={self.backend!r}{extras}"
         )
+
+
+def _leak_vector(
+    connectome: Connectome,
+    leak: float,
+    leak_by: dict[str, float] | None,
+    leak_column: str,
+    dtype: torch.dtype,
+) -> Tensor | None:
+    """Per-neuron leak coefficients, or ``None`` when one leak fits all."""
+    if leak_by is None:
+        return None
+    if leak_column not in connectome.node_columns:
+        raise ConnectorchError(
+            f"no node column {leak_column!r} to read leak groups from; available: "
+            f"{list(connectome.node_columns)}."
+        )
+    for group, value in leak_by.items():
+        if not 0.0 < float(value) <= 1.0:
+            raise ValueError(f"leak for group {group!r} must be in (0, 1], got {value}.")
+    labels = connectome.nodes.column(leak_column).to_pylist()
+    vec = torch.tensor(
+        [float(leak_by.get("" if v is None else str(v), leak)) for v in labels],
+        dtype=dtype,
+    ).unsqueeze(-1)
+    return vec
+
+
+def _delay_groups(
+    connectome: Connectome,
+    delay_by: dict[str, int] | None,
+    delay_column: str,
+) -> tuple[list[int], list[np.ndarray]]:
+    """Partition edge positions by synaptic delay, from the source neuron's group."""
+    if not delay_by:
+        return [], []
+    if delay_column not in connectome.node_columns:
+        raise ConnectorchError(
+            f"no node column {delay_column!r} to read delay groups from; available: "
+            f"{list(connectome.node_columns)}."
+        )
+    for group, value in delay_by.items():
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, int | np.integer)
+            or not 0 <= int(value) <= MAX_SYNAPTIC_DELAY
+        ):
+            raise ValueError(
+                f"delay for group {group!r} must be an integer in "
+                f"[0, {MAX_SYNAPTIC_DELAY}], got {value}."
+            )
+    labels = [
+        "" if v is None else str(v) for v in connectome.nodes.column(delay_column).to_pylist()
+    ]
+    source = np.asarray(connectome.edge_index[0])
+    per_edge = np.array([int(delay_by.get(labels[s], 0)) for s in source], dtype=np.int64)
+    values = [int(d) for d in sorted(np.unique(per_edge))]
+    return values, [(per_edge == d).nonzero()[0] for d in values]
 
 
 def _rebuild_propagator(module: ConnectomeRNN, incompatible_keys: object) -> None:
     """Post-``load_state_dict`` hook: re-derive the backend from the loaded topology."""
     module.propagator.rebuild(module.edge_index)
+    for i in range(len(module.delay_values)):
+        mask = getattr(module, f"delay_mask_{i}")
+        if int(mask.numel()) and int(mask.max()) >= int(module.edge_index.shape[1]):
+            raise ConnectorchError(
+                "the checkpoint's delay masks do not fit the loaded topology "
+                f"(mask indexes edge {int(mask.max())} of "
+                f"{int(module.edge_index.shape[1])}). Load a checkpoint built "
+                "from the same connectome and delay mapping."
+            )
+        sub = cast(Propagator, module.delay_propagators[i])
+        sub.rebuild(module.edge_index[:, mask])
 
 
 def _resolve_nodes(connectome: Connectome, nodes: np.ndarray | list | None) -> Tensor:

@@ -156,7 +156,43 @@ plumbing carries signal when the task is easy enough.
 **We are not reporting any wiring ranking from this experiment. There is
 nothing above the floor to rank.**
 
-### What this does not show
+## 04 — Direction selectivity emerges from the motion wiring (FIRST POSITIVE)
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=0 python experiments/04_selectivity.py --seeds 5 --epochs 3
+```
+
+Exps 01-03 drove L1 and asked the wiring to classify. The data says that
+was biologically illiterate: L1 is glutamatergic and inhibitory in
+*Drosophila* (all 1,818 L1→Mi1 edges are sign −1), so a positive L1 drive
+can only ever silence the ON pathway — verified: the network is exactly
+silent past L1. The excitatory lamina outputs are L5/L3→Mi1 (ON) and
+L2/L4→Tm1/Tm2/Tm4, L3→Tm9 (OFF), all cholinergic. This experiment drives
+the cartridge (L2/L3/L5 per hex column) instead, with the FlyVis recipe:
+fixed wiring, count-proportional prior, Dale signs frozen, per-type gains
+only (42k params, never 262k), per-type leak (L1 fast, T4 slow),
+heterogeneous delays (Mi4/Mi9 +2, Tm9 +1), graded threshold-linear output.
+Metric is T4 direction selectivity (DSI), not accuracy alone; null set is
+degree-preserving, random, and count-shuffled wiring plus a T4-silenced
+readout control.
+
+| arm | test accuracy | mean T4 DSI | silenced acc |
+|---|---|---|---|
+| `real` | 1.0000 ± 0.0000 | 0.69 ± 0.18 | 0.49 |
+| `shuffled_weights` | 1.0000 ± 0.0000 | 0.95 ± 0.08 | 0.48 |
+| `random` | 0.6156 ± 0.2157 | 0.50 ± 0.18 | 0.50 |
+| `degree_preserving` | 0.5195 ± 0.0181 | 0.55 ± 0.18 | 0.50 |
+
+Intact wiring solves coherent motion perfectly with selective T4; rewired
+graphs sit at chance (one lucky random seed hit 1.0, reported as is).
+Count magnitudes do not matter (shuffled ≥ real): the computation lives in
+which cell type connects to which, with what sign — not in how many
+synapses. Silencing T4 collapses every arm to chance, so the decision
+genuinely uses the direction-selective cells. Caveats: full-span sweeps
+carry an endpoint confound (shared by all arms, so the ranking stands);
+the post-hoc DSI floor is high (~0.5), accuracy is the clean separator.
+
+### What this does not show (exp 03)
 
 Whether the floor is the task, the rate-neuron dynamics, or the frozen
 topology is still open. The next step that could still matter: naturalistic
