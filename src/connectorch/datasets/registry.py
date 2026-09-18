@@ -7,6 +7,8 @@ from typing import Any
 
 from ..exceptions import ConnectorchError
 from ..ir import Connectome
+from .elegans import DATASET_INFO as _ELEGANS_INFO
+from .elegans import elegans as _load_elegans
 from .malecns import DATASET_INFO as _MALECNS_INFO
 from .malecns import malecns as _load_malecns
 from .malecns import malecns_sample as _load_malecns_sample
@@ -15,6 +17,7 @@ __all__ = ["list_datasets", "info", "get"]
 
 _REGISTRY: dict[str, dict[str, Any]] = {
     "male-cns": {**_MALECNS_INFO, "loader": _load_malecns},
+    "c-elegans": {**_ELEGANS_INFO, "loader": _load_elegans},
     "male-cns-sample": {
         "name": "male-cns-sample",
         "version": "v1.0",

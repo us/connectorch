@@ -39,6 +39,26 @@ fly = ct.datasets.malecns_sample()      # the bundled subset, offline
 fly.where(cell_type="Mi1")
 ```
 
+## C. elegans (Cook et al. 2019)
+
+The whole-animal hermaphrodite chemical connectome: 302 neurons in the
+nervous system, 411 annotated cells with the sex-specific neurons included,
+3,534 scored chemical connections. The entire dataset is ~22 KB, so this is
+the connectome for fast iteration: it loads in milliseconds with no 500 MB
+download. Fetched from the Netzschleuder mirror of the WormWiring
+reconstructions. See [References](references.md).
+
+```python
+import connectorch as ct
+
+worm = ct.datasets.elegans(download=True)   # 411 neurons, ~22 KB
+worm.where(cell_class="MOTOR NEURONS")
+```
+
+The pharyngeal nervous system (57 cells, a largely autonomous circuit) is
+excluded by default; pass `include_pharynx=True` to keep it. `table="male_chemical_synapse"`
+loads the male reconstruction instead.
+
 Full citations for every dataset are on the [References](references.md) page.
 If you publish work using one of these connectomes, cite the dataset's authors.
 

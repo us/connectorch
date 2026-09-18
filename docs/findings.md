@@ -120,7 +120,9 @@ vs shuffled (both solve clean): shuffled drops less on slow sweeps (0.20 vs
 
 Not dead plumbing: a 4x-budget 2-way probe on `real` reaches 0.68 (chance
 0.50). 2-D position invariance (same direction at any of 892 positions) needs
-far more samples than 1-D at matched protocol. Secondary signal: removing
+far more samples than 1-D at matched protocol. Input energy ruled out as the
+cause: a 2-way 2-D probe at input gain x1 vs x8 scores 0.49/0.46 (both
+chance), so the floor is not whisper-quiet drive. Secondary signal: removing
 inhibition destabilizes dynamics (`ei_collapsed` loss 199 vs 1.37), so E/I
 balance stabilizes this recurrent network even while it learns nothing here.
 

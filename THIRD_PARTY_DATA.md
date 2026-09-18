@@ -43,6 +43,27 @@ Full datasets downloaded at runtime by `connectorch.datasets.malecns()` are
 likewise CC-BY and are never redistributed by this project; they are fetched from
 the publishers' own bucket on the user's machine.
 
+## C. elegans (Cook et al. 2019)
+
+**Never bundled; fetched at runtime** by `connectorch.datasets.elegans()` from the
+Netzschleuder mirror (`https://networks.skewed.de/net/celegans_2019/files/`,
+upstream https://wormwiring.org/pages/adjacency.html). The `synapse` tables used
+here contain only EM-scored synapse counts between cell pairs, with no extrapolated
+connections.
+
+| | |
+|---|---|
+| Dataset | Whole-animal *C. elegans* chemical connectome, hermaphrodite and male |
+| Authors | Cook, S. J. et al. (Emmons lab and collaborators) |
+| Paper | Cook, S. J. et al. *Whole-animal connectomes of both Caenorhabditis elegans sexes.* Nature **571**, 63-71 (2019). https://doi.org/10.1038/s41586-019-1352-7 |
+| License | Data stays under its authors' terms; this project redistributes nothing, it only downloads the published files to the user's own cache. |
+
+**If you use this data, cite the original authors, not ConnecTorch:**
+
+> Cook, S. J. et al. Whole-animal connectomes of both Caenorhabditis elegans
+> sexes. Nature 571, 63-71 (2019). doi:10.1038/s41586-019-1352-7
+> Data: WormWiring / Netzschleuder mirror. https://wormwiring.org/pages/adjacency.html
+
 ## Everything else
 
 `connectorch.datasets.toy` generates synthetic graphs with numpy. They are not

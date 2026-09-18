@@ -39,10 +39,21 @@ a transmitter label alone does not determine whether a connection excites or
 inhibits. See [Scientific caveats](caveats.md).
 
 **neuPrint** — the server behind `connectorch.io.from_neuprint`.
-
 > Plaza, S. M., Clements, J. et al. *neuPrint: An open access tool for EM
 > connectomics.* Frontiers in Neuroinformatics **16**, 896292 (2022).
 > <https://doi.org/10.3389/fninf.2022.896292>
+
+**C. elegans Cook 2019** — the second species in the library, loaded by
+`connectorch.datasets.elegans`.
+
+> Cook, S. J. et al. *Whole-animal connectomes of both Caenorhabditis elegans
+> sexes.* Nature **571**, 63–71 (2019).
+> <https://doi.org/10.1038/s41586-019-1352-7>
+
+Hermaphrodite and male chemical reconstructions, machine-readable via the
+Netzschleuder mirror (upstream: <https://wormwiring.org/pages/adjacency.html>).
+The `synapse` tables used here carry EM-scored counts only, no extrapolated
+connections.
 
 ## Prior work
 
