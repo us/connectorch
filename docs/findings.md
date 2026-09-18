@@ -124,6 +124,19 @@ far more samples than 1-D at matched protocol. Secondary signal: removing
 inhibition destabilizes dynamics (`ei_collapsed` loss 199 vs 1.37), so E/I
 balance stabilizes this recurrent network even while it learns nothing here.
 
+### 4.6 Second positive: sparse expansion wins at matched compute (exp 08)
+
+| arm | mean top-10 overlap | ops/query |
+|---|---|---|
+| `fly` (`SparseExpander`) | 4.10 ± 0.11 | 12,000 |
+| `lsh_matched` (dense, same compute) | 0.39 ± 0.08 | 11,760 |
+| `lsh_big` (dense, 130x compute) | 7.65 ± 0.07 | 1,568,000 |
+
+MNIST, 200 queries vs 2000 db, cosine ground truth, 5 seeds. At matched
+compute the mushroom-body motif wins 10x; dense codes only win with two
+orders of magnitude more compute. The Dasgupta et al. 2017 efficiency
+pattern, reproduced with the library's own module.
+
 ## 5. Interpretation
 
 1. **Channel in matters most.** The single biggest effect in the program is

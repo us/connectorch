@@ -273,6 +273,28 @@ inhibition destabilizes the dynamics (`ei_collapsed` loss 199 vs 1.37
 elsewhere) — E/I balance keeps this recurrent network stable, even while
 it learns nothing here.
 
+## 08 — Sparse expansion wins at matched compute (SECOND POSITIVE)
+
+```bash
+python experiments/08_flyhash.py --seeds 5
+```
+
+The mushroom-body motif (`SparseExpander`: 784 to 2000, fan-in 6,
+top-100 active) against dense sign-projection LSH on cached MNIST
+(200 queries vs 2000 db, cosine ground truth, 5 seeds):
+
+| arm | mean top-10 overlap | ops/query |
+|---|---|---|
+| `fly` | 4.10 ± 0.11 | 12,000 |
+| `lsh_matched` | 0.39 ± 0.08 | 11,760 |
+| `lsh_big` | 7.65 ± 0.07 | 1,568,000 |
+
+At matched compute the sparse expansion wins 10x over the dense
+projection; the dense code only wins with 130x the compute. This is the
+Dasgupta et al. 2017 pattern reproduced with the library's own module:
+the win is on the efficiency frontier, not on raw accuracy. No download
+needed (uses the cached MNIST).
+
 ### What this does not show (exp 03)
 
 Whether the floor is the task, the rate-neuron dynamics, or the frozen

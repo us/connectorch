@@ -1,0 +1,15 @@
+{"arm": "fly", "seed": 0, "top10_hit": 4.14, "ops_per_query": 12000, "seconds": 0.0}
+{"arm": "lsh_matched", "seed": 0, "top10_hit": 0.44, "ops_per_query": 11760, "seconds": 0.0}
+{"arm": "lsh_big", "seed": 0, "top10_hit": 7.75, "ops_per_query": 1568000, "seconds": 0.0}
+{"arm": "fly", "seed": 1, "top10_hit": 4.08, "ops_per_query": 12000, "seconds": 0.0}
+{"arm": "lsh_matched", "seed": 1, "top10_hit": 0.375, "ops_per_query": 11760, "seconds": 0.0}
+{"arm": "lsh_big", "seed": 1, "top10_hit": 7.52, "ops_per_query": 1568000, "seconds": 0.0}
+{"arm": "fly", "seed": 2, "top10_hit": 4.15, "ops_per_query": 12000, "seconds": 0.0}
+{"arm": "lsh_matched", "seed": 2, "top10_hit": 0.5, "ops_per_query": 11760, "seconds": 0.0}
+{"arm": "lsh_big", "seed": 2, "top10_hit": 7.655, "ops_per_query": 1568000, "seconds": 0.0}
+{"arm": "fly", "seed": 3, "top10_hit": 3.915, "ops_per_query": 12000, "seconds": 0.0}
+{"arm": "lsh_matched", "seed": 3, "top10_hit": 0.27, "ops_per_query": 11760, "seconds": 0.0}
+{"arm": "lsh_big", "seed": 3, "top10_hit": 7.68, "ops_per_query": 1568000, "seconds": 0.0}
+{"arm": "fly", "seed": 4, "top10_hit": 4.24, "ops_per_query": 12000, "seconds": 0.0}
+{"arm": "lsh_matched", "seed": 4, "top10_hit": 0.345, "ops_per_query": 11760, "seconds": 0.0}
+{"arm": "lsh_big", "seed": 4, "top10_hit": 7.65, "ops_per_query": 1568000, "seconds": 0.0}
