@@ -13,6 +13,8 @@ circuit with the stimulus entering through the channels that actually drive it,
 the same wiring solves coherent motion perfectly (1.00 vs ~0.52 rewired) with
 ~42k cell-type-shared parameters. E/I identity is causal, delays are not (in this
 task), topology matters beyond signs, and 2-D flow at matched budget is a wall.
+Separately, the mushroom-body motif wins twice: 10x retrieval at matched
+compute (exp 08) and few-shot classification 0.78 vs 0.66 MLP (exp 09).
 The pattern across all runs: **correct channel in, frozen wiring, biology does
 the work; anything else, randomness does as well.**
 
@@ -138,6 +140,30 @@ MNIST, 200 queries vs 2000 db, cosine ground truth, 5 seeds. At matched
 compute the mushroom-body motif wins 10x; dense codes only win with two
 orders of magnitude more compute. The Dasgupta et al. 2017 efficiency
 pattern, reproduced with the library's own module.
+
+### 4.7 Third positive: the mushroom-body head learns few-shot (exp 09)
+
+| arm | few-shot (256) | full MNIST |
+|---|---|---|
+| `fly` (sparse expansion + readout) | 0.7830 ± 0.0165 | 0.9482 ± 0.0008 |
+| `dense_expansion` (same trainables, 130x compute) | 0.7381 ± 0.0145 | 0.9426 ± 0.0018 |
+| `mlp` (matched trainables, ~20k) | 0.6625 ± 0.0204 | 0.9283 ± 0.0013 |
+
+5 seeds, frozen expansion, only the readout trains. Clean ladder, gaps
+larger than spreads: expansion beats the MLP (+0.12 few-shot), and
+sparsity beats dense expansion (+0.045 few-shot). The motif is a
+few-shot learner first, accuracy winner second.
+
+### 4.8 Killed probes (throwaway scripts, recorded so nobody reruns them)
+
+* Full-field translating texture, 2-way 2-D, 6 epochs, 1 seed: blob
+  0.64 vs texture 0.59 (chance 0.50). Drive density is not the 2-D wall;
+  no full experiment written.
+* Elegans reservoir on Swimmer-v5, decoder-only random search (60 iters,
+  1 seed): real 28.2 vs random 26.1 (random-action baseline ~3.5). Both
+  swim, neither wins on topology. Full-ES landscape is cliffy (returns
+  oscillate 24 to -15 across generations as swim direction flips), so no
+  full run: the compute buys no ranking.
 
 ## 5. Interpretation
 

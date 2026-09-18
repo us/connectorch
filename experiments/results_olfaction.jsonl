@@ -1,0 +1,30 @@
+{"arm": "fly", "seed": 0, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.7687000036239624, "trainable_parameters": 20010, "seconds": 0.3, "python": "3.12.13"}
+{"arm": "dense_expansion", "seed": 0, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.7498000264167786, "trainable_parameters": 20010, "seconds": 0.1, "python": "3.12.13"}
+{"arm": "mlp", "seed": 0, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.682699978351593, "trainable_parameters": 19885, "seconds": 0.0, "python": "3.12.13"}
+{"arm": "fly", "seed": 0, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9491999745368958, "trainable_parameters": 20010, "seconds": 2.4, "python": "3.12.13"}
+{"arm": "dense_expansion", "seed": 0, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9413999915122986, "trainable_parameters": 20010, "seconds": 1.1, "python": "3.12.13"}
+{"arm": "mlp", "seed": 0, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9283000230789185, "trainable_parameters": 19885, "seconds": 0.3, "python": "3.12.13"}
+{"arm": "fly", "seed": 1, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.7598000168800354, "trainable_parameters": 20010, "seconds": 0.1, "python": "3.12.13"}
+{"arm": "dense_expansion", "seed": 1, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.7190999984741211, "trainable_parameters": 20010, "seconds": 0.1, "python": "3.12.13"}
+{"arm": "mlp", "seed": 1, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.6635000109672546, "trainable_parameters": 19885, "seconds": 0.0, "python": "3.12.13"}
+{"arm": "fly", "seed": 1, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9485999941825867, "trainable_parameters": 20010, "seconds": 1.1, "python": "3.12.13"}
+{"arm": "dense_expansion", "seed": 1, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9444000124931335, "trainable_parameters": 20010, "seconds": 1.0, "python": "3.12.13"}
+{"arm": "mlp", "seed": 1, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9284999966621399, "trainable_parameters": 19885, "seconds": 1.0, "python": "3.12.13"}
+{"arm": "fly", "seed": 2, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.8051000237464905, "trainable_parameters": 20010, "seconds": 0.2, "python": "3.12.13"}
+{"arm": "dense_expansion", "seed": 2, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.7530999779701233, "trainable_parameters": 20010, "seconds": 0.2, "python": "3.12.13"}
+{"arm": "mlp", "seed": 2, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.6696000099182129, "trainable_parameters": 19885, "seconds": 0.0, "python": "3.12.13"}
+{"arm": "fly", "seed": 2, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9469000101089478, "trainable_parameters": 20010, "seconds": 2.0, "python": "3.12.13"}
+{"arm": "dense_expansion", "seed": 2, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9406999945640564, "trainable_parameters": 20010, "seconds": 1.1, "python": "3.12.13"}
+{"arm": "mlp", "seed": 2, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9287999868392944, "trainable_parameters": 19885, "seconds": 0.9, "python": "3.12.13"}
+{"arm": "fly", "seed": 3, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.7929999828338623, "trainable_parameters": 20010, "seconds": 0.2, "python": "3.12.13"}
+{"arm": "dense_expansion", "seed": 3, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.7465999722480774, "trainable_parameters": 20010, "seconds": 0.2, "python": "3.12.13"}
+{"arm": "mlp", "seed": 3, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.6729999780654907, "trainable_parameters": 19885, "seconds": 0.0, "python": "3.12.13"}
+{"arm": "fly", "seed": 3, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9484000205993652, "trainable_parameters": 20010, "seconds": 2.2, "python": "3.12.13"}
+{"arm": "dense_expansion", "seed": 3, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9415000081062317, "trainable_parameters": 20010, "seconds": 1.7, "python": "3.12.13"}
+{"arm": "mlp", "seed": 3, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9259999990463257, "trainable_parameters": 19885, "seconds": 0.6, "python": "3.12.13"}
+{"arm": "fly", "seed": 4, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.7885000109672546, "trainable_parameters": 20010, "seconds": 0.2, "python": "3.12.13"}
+{"arm": "dense_expansion", "seed": 4, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.7218999862670898, "trainable_parameters": 20010, "seconds": 0.1, "python": "3.12.13"}
+{"arm": "mlp", "seed": 4, "regime": "few-shot (256)", "n_train": 256, "epochs": 20, "accuracy": 0.6234999895095825, "trainable_parameters": 19885, "seconds": 0.0, "python": "3.12.13"}
+{"arm": "fly", "seed": 4, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9477999806404114, "trainable_parameters": 20010, "seconds": 3.3, "python": "3.12.13"}
+{"arm": "dense_expansion", "seed": 4, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9451000094413757, "trainable_parameters": 20010, "seconds": 1.2, "python": "3.12.13"}
+{"arm": "mlp", "seed": 4, "regime": "full", "n_train": 60000, "epochs": 3, "accuracy": 0.9298999905586243, "trainable_parameters": 19885, "seconds": 0.3, "python": "3.12.13"}

@@ -295,6 +295,28 @@ Dasgupta et al. 2017 pattern reproduced with the library's own module:
 the win is on the efficiency frontier, not on raw accuracy. No download
 needed (uses the cached MNIST).
 
+## 09 — The mushroom-body head learns few-shot (THIRD POSITIVE)
+
+```bash
+python experiments/09_olfaction.py --seeds 5
+```
+
+Same motif as exp 08, now as a classifier: frozen expansion plus a learned
+linear readout vs a parameter-matched MLP (trainable ~20k both) and a dense
+frozen expansion control (same trainable count, 130x the compute). MNIST,
+5 seeds, two regimes:
+
+| arm | few-shot (256) | full |
+|---|---|---|
+| `fly` | 0.7830 ± 0.0165 | 0.9482 ± 0.0008 |
+| `dense_expansion` | 0.7381 ± 0.0145 | 0.9426 ± 0.0018 |
+| `mlp` | 0.6625 ± 0.0204 | 0.9283 ± 0.0013 |
+
+Clean ladder, gaps larger than spreads: expansion beats the MLP (+0.12
+few-shot, +0.02 full), and sparsity beats dense expansion (+0.045
+few-shot). The motif is a few-shot learner first, accuracy winner second.
+No download needed (uses the cached MNIST).
+
 ### What this does not show (exp 03)
 
 Whether the floor is the task, the rate-neuron dynamics, or the frozen
