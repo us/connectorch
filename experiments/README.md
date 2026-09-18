@@ -244,6 +244,35 @@ matters beyond signs — random wiring with matched sign statistics reaches
 0.84 but stays below intact wiring on every seed. Silencing T4 collapses
 all arms to chance.
 
+## 07 — 2-D endpoint-free flow with the correct drive (BOUND)
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=0 python experiments/07_flow_v2.py --seeds 5 --epochs 3
+```
+
+Exp03's ambition (4-direction 2-D flow, T4+T5 readout) with exp06's
+correct stimulus (translating blob in hex space, random start, whole path
+inside the range, injected into all 4,432 cartridge cells over 892
+positions). Same FlyVis recipe, same 5 mechanism arms:
+
+| arm | test accuracy | test loss | silenced acc |
+|---|---|---|---|
+| `real` | 0.2918 ± 0.0254 | 1.37 | 0.25 |
+| `no_delay` | 0.2934 ± 0.0217 | 1.37 | 0.25 |
+| `random` | 0.2895 ± 0.0203 | 1.38 | 0.25 |
+| `sign_shuffled` | 0.2703 ± 0.0218 | 3.47 | 0.25 |
+| `ei_collapsed` | 0.2590 ± 0.0232 | 199.47 | 0.25 |
+
+Floor at matched budget (chance 0.25, all arms). Not dead plumbing: a
+4x-budget 2-way probe on `real` reaches 0.68 (chance 0.50), so the task
+is learnable in principle — but 2-D position invariance (same direction
+at any of 892 positions) needs far more samples than 1-D (where `real`
+hit 0.95 at standard budget). The bound is quantitative: 1-D works, 2-D
+doesn't, at matched protocol. One secondary signal is real: removing
+inhibition destabilizes the dynamics (`ei_collapsed` loss 199 vs 1.37
+elsewhere) — E/I balance keeps this recurrent network stable, even while
+it learns nothing here.
+
 ### What this does not show (exp 03)
 
 Whether the floor is the task, the rate-neuron dynamics, or the frozen
