@@ -192,6 +192,31 @@ genuinely uses the direction-selective cells. Caveats: full-span sweeps
 carry an endpoint confound (shared by all arms, so the ranking stands);
 the post-hoc DSI floor is high (~0.5), accuracy is the clean separator.
 
+## 05 — The motion wiring under distribution shift (MIXED)
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=0 python experiments/05_ood.py --seeds 5 --epochs 3
+```
+
+The literature's strongest bio-structure cluster is robustness (NCPs lose
+clean and win under noise), so exp 04's winner was trained on clean sweeps
+and tested under seven shifts. Drops vs clean, mean over 5 seeds:
+
+| arm | clean | contrast | slow | fast | noise | occlusion | partial |
+|---|---|---|---|---|---|---|---|
+| `real` | 1.00 | 1.00/0.90 | 0.50 | 0.61 | 0.53 | 1.00 | 1.00 |
+| `shuffled_weights` | 1.00 | 1.00/0.90 | 0.80 | 0.60 | 0.59 | 1.00 | 1.00 |
+| `random` / `degree` | ~0.51 | ~0.51 | ~0.51 | ~0.55 | ~0.51 | ~0.51 | ~0.51 |
+
+No NCP-style robustness win: intact wiring survives contrast, occlusion
+and partial sweeps perfectly but collapses on speed and noise shifts — the
+delay-line coincidence it computes with is tuned to the training timescale.
+The rewired arms show ~zero drop only because they never left the floor
+(~0.51 everywhere), which is a floor artifact, not robustness. Honest
+comparison is real vs shuffled (both solve clean): shuffled drops less on
+slow sweeps (0.20 vs 0.50), so count magnitudes add fragility there, not
+resilience. Mechanism unknown; reported as is.
+
 ### What this does not show (exp 03)
 
 Whether the floor is the task, the rate-neuron dynamics, or the frozen
