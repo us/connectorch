@@ -90,10 +90,12 @@ derived from them is a prediction on top of a prediction, and `provenance
 ## What this still is not
 
 Fixing the weights is one step, not the whole distance. The runtime is still a
-rate model: no spikes, no membrane dynamics, no propagation delays, no
-neuromodulation, no plasticity, and a "step" that corresponds to no particular
-number of milliseconds. The input and output neurons are whichever ones you
-select, with none of the retinotopy a real sensory map has.
+rate model: no spikes, no membrane conductances, no dendritic compartments, no gap
+junctions, no neuromodulation, no plasticity, and a "step" that corresponds to no particular
+number of milliseconds. Fixed heterogeneous synaptic delays (`delay_by`) and
+per-type leak (`leak_by`) are supported; learned time constants are not. The input
+and output neurons are whichever ones you select, with none of the retinotopy a
+real sensory map has.
 
 What changed is narrower and worth stating exactly: **the measured synapse counts
 and the measured transmitters are now still present in the model after training,

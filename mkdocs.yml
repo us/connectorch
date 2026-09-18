@@ -22,6 +22,7 @@ nav:
   - Datasets: datasets.md
   - Performance: performance.md
   - Scientific caveats: caveats.md
+  - Findings: findings.md
   - References: references.md
   - API reference: api.md
 plugins:
