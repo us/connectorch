@@ -177,6 +177,17 @@ few-shot learner first, accuracy winner second.
   slow barely moves (0.50 to 0.61). Random wiring rescued identically
   (slow 0.63, clean 0.80, fast 1.00): augmentation is a recipe fix, not
   a wiring win; no full experiment written.
+* Learnable per-type leak (sigmoid-parametrized, 24 groups, 3 epochs,
+  1 seed, speed-augmented): slow 0.63 to 0.65, clean/fast unchanged
+  (0.84/1.00). Timescales do not learn their way out of the speed wall;
+  no library change, no full experiment written.
+* Ring attractor bump persistence (EPG 46 + PEN 42, impulse + free run,
+  no training, Dale signs frozen): all arms decay to exactly uniform
+  within 25 steps (0.065 vs 0.065 uniform) under tanh; under
+  threshold-linear all arms explode (peak ~260k). The 92-node loop is
+  structurally ring-like (1106 reciprocal pairs vs ~400 in controls)
+  but this rate model has no persistent-bump regime without new dynamics
+  (spiking/LIF, tuned inhibition); no full experiment written.
 
 ## 5. Interpretation
 
