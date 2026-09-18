@@ -168,6 +168,15 @@ few-shot learner first, accuracy winner second.
   retained accuracy on 0-4 collapses to ~0.00 in both arms (fly 0.001,
   mlp 0.000). Frozen sparse expansion does not save a shared readout
   from being overwritten; no full experiment written.
+* Retrieval under query noise (200 queries, 3 seeds): fly 4.1 to 3.1 to
+  1.7 at noise 0.0/0.3/0.6, matched dense 0.44 to 0.21 to 0.11. The 10x
+  efficiency gap persists at every noise level, but both degrade
+  proportionally: no differential robustness win, same win as exp 08.
+* Speed-augmented training (mixed 0.5x/1x/2x, 2 epochs, 1 seed):
+  fast-shift rescued (0.61 to 1.00) but clean drops (1.00 to 0.86) and
+  slow barely moves (0.50 to 0.61). Random wiring rescued identically
+  (slow 0.63, clean 0.80, fast 1.00): augmentation is a recipe fix, not
+  a wiring win; no full experiment written.
 
 ## 5. Interpretation
 
