@@ -164,6 +164,10 @@ few-shot learner first, accuracy winner second.
   swim, neither wins on topology. Full-ES landscape is cliffy (returns
   oscillate 24 to -15 across generations as swim direction flips), so no
   full run: the compute buys no ranking.
+* Class-incremental MNIST (0-4 then 5-9, 5 epochs each, 3 seeds):
+  retained accuracy on 0-4 collapses to ~0.00 in both arms (fly 0.001,
+  mlp 0.000). Frozen sparse expansion does not save a shared readout
+  from being overwritten; no full experiment written.
 
 ## 5. Interpretation
 
