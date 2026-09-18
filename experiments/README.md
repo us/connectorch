@@ -113,7 +113,58 @@ Requires downloading annotations (14 MB) + traced-only edges (508 MB);
 note the sandbox-proxy 403 on GCS, use a direct connection
 (`NO_PROXY=$NO_PROXY,storage.googleapis.com`).
 
+## 03 — 2-D optic flow on the motion circuit, T4+T5 readout
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=0 python experiments/03_flow.py --seeds 5 --epochs 3
+```
+
+Exp 02's 1-D sweep was still a toy: one axis, T4-only readout. This goes
+one step closer to what the circuit is for: a Gaussian blob translating in
+one of four cardinal directions (chance 25%) over the 2-D hex layout,
+injected into one L1 cell per (hex1, hex2) position (892 inputs), read out
+from T4a-d plus T5a-d pooled by subtype (8 channels → 4 classes). The T5
+pathway is intact in the data: 66,816 edges into T5, dominated by
+Tm9/Tm2/Tm1/Tm4. (hex1, hex2) is treated as Cartesian stimulus space; the
+real lattice is hexagonal, so the four directions are stimulus labels, not
+visual-angle claims.
+
+### What it found
+
+| arm | test accuracy | `\|w\|` / synapse-count prior |
+|---|---|---|
+| `dense_rnn` | 0.3746 ± 0.0279 | n/a |
+| `random` | 0.3090 ± 0.0129 | 0.41 – 1.83 |
+| `degree_preserving` | 0.3012 ± 0.0116 | 0.29 – 1.69 |
+| `shuffled_weights` | 0.2770 ± 0.0099 | 0.50 – 1.52 |
+| `real` | 0.2680 ± 0.0152 | 0.52 – 1.49 |
+| `biological_shared` | 0.2605 ± 0.0199 | 0.91 – 1.06 |
+| `biological` | 0.2602 ± 0.0165 | 0.92 – 1.08 |
+
+A floor effect, not a comparison: nobody learns. Every sparse arm sits at
+chance through all 192 updates per seed; the dense control is the only one
+off the floor and still bad (0.37). So this is not a topology negative,
+it is a trainability negative: fixed sparse cores with free per-edge
+weights do not train on 2-D partial-sweep integration under this protocol
+(same optimiser, lr, seeds and budget discipline as exps 01–02).
+Probes that failed to lift the sparse arms off the floor: 3x input gain,
+zero observation noise, leak 0.1, per-step dense supervision, 6 epochs
+(dense collapses to 0.38 there, so 3 epochs is the right budget), and a
+full-span 2-way diagnostic that does reach 0.70 on `real`, proving the
+plumbing carries signal when the task is easy enough.
+
+**We are not reporting any wiring ranking from this experiment. There is
+nothing above the floor to rank.**
+
 ### What this does not show
+
+Whether the floor is the task, the rate-neuron dynamics, or the frozen
+topology is still open. The next step that could still matter: naturalistic
+optic flow instead of a single blob, and checking whether the dense control
+itself can even reach high accuracy on this stimulus (if it cannot, the
+stimulus is the problem, not the connectome).
+
+### What this does not show (exp 02)
 
 Twelve steps of a 1-D sweep is still a toy stimulus, the L1-per-column
 sampling throws away most of the retina, and T5/lobula outputs are not in
