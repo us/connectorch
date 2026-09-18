@@ -15,6 +15,8 @@ the same wiring solves coherent motion perfectly (1.00 vs ~0.52 rewired) with
 task), topology matters beyond signs, and 2-D flow at matched budget is a wall.
 Separately, the mushroom-body motif wins twice: 10x retrieval at matched
 compute (exp 08) and few-shot classification 0.78 vs 0.66 MLP (exp 09).
+And the recipe generalizes species: the worm sensorimotor circuit hits
+0.91 vs ~0.75 rewired on chemotaxis (exp 10).
 The pattern across all runs: **correct channel in, frozen wiring, biology does
 the work; anything else, randomness does as well.**
 
@@ -154,6 +156,22 @@ larger than spreads: expansion beats the MLP (+0.12 few-shot), and
 sparsity beats dense expansion (+0.045 few-shot). The motif is a
 few-shot learner first, accuracy winner second.
 
+### 4.9 Fourth positive: the worm circuit computes chemotaxis (exp 10)
+
+| arm | test accuracy | silenced acc |
+|---|---|---|
+| `real` | 0.9059 ± 0.0106 | 0.5090 |
+| `shuffled_weights` | 0.8945 ± 0.0162 | 0.5090 |
+| `random` | 0.7582 ± 0.0200 | 0.5090 |
+| `degree_preserving` | 0.7445 ± 0.0277 | 0.5090 |
+
+Start-matched ramps into 8 chemosensory cells, motor readout, whole
+411-node graph, 80 trainable params, 5 seeds. Intact beats rewired by
+~0.15, gaps larger than spreads; shuffled matches real (topology, not
+counts); motor silencing drops every arm to chance. The motion recipe
+generalizes across species: home task plus correct channel in plus
+frozen wiring.
+
 ### 4.8 Killed probes (throwaway scripts, recorded so nobody reruns them)
 
 * Full-field translating texture, 2-way 2-D, 6 epochs, 1 seed: blob
@@ -188,6 +206,12 @@ few-shot learner first, accuracy winner second.
   structurally ring-like (1106 reciprocal pairs vs ~400 in controls)
   but this rate model has no persistent-bump regime without new dynamics
   (spiking/LIF, tuned inhibition); no full experiment written.
+* Real mushroom-body wiring for classification (PN 808 to KC 4064 to
+  MBON 97, Dale signs frozen, readout-only training, threshold-linear):
+  network explodes (mean activation ~4M); under tanh it reaches 0.34 at
+  n=2000 (chance 0.10) but never approaches the synthetic motif's 0.95.
+  Real PN to KC fan-in/fan-out statistics are not the motif; the motif
+  is an abstraction. Recorded so nobody reruns it.
 
 ## 5. Interpretation
 

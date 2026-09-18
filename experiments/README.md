@@ -317,6 +317,33 @@ few-shot, +0.02 full), and sparsity beats dense expansion (+0.045
 few-shot). The motif is a few-shot learner first, accuracy winner second.
 No download needed (uses the cached MNIST).
 
+## 10 — The worm circuit computes chemotaxis (FOURTH POSITIVE)
+
+```bash
+python experiments/10_chemotaxis.py --seeds 5 --epochs 5
+```
+
+The motion recipe on the second species: temporal gradient direction
+(ramp up vs down over 12 steps, start-matched so level carries no
+information), driven into 8 chemosensory cells, readout from 39 motor
+neurons through a frozen-count mean pool plus a 1 to 2 linear layer.
+Whole elegans graph (411 nodes, 3,534 edges), Dale signs frozen where
+present, 80 trainable params in every arm:
+
+| arm | test accuracy | test loss | silenced acc |
+|---|---|---|---|
+| `real` | 0.9059 ± 0.0106 | 0.2290 | 0.5090 |
+| `shuffled_weights` | 0.8945 ± 0.0162 | 0.2565 | 0.5090 |
+| `random` | 0.7582 ± 0.0200 | 0.4584 | 0.5090 |
+| `degree_preserving` | 0.7445 ± 0.0277 | 0.4775 | 0.5090 |
+
+Intact wiring beats rewired wiring by ~0.15 with gaps larger than
+spreads, and silencing the motor readout drops every arm to chance,
+so the decision genuinely uses the sensorimotor path. Same pattern as
+the fly motion result: count magnitudes do not matter (shuffled is
+within noise of real), topology does. The elegans loader needs one
+22 KB download; everything else is local.
+
 ### What this does not show (exp 03)
 
 Whether the floor is the task, the rate-neuron dynamics, or the frozen

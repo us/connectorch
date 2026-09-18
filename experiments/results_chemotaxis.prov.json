@@ -1,0 +1,6 @@
+{
+  "experiment": "10_chemotaxis",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "seeds": 5,
+  "epochs": 5
+}
