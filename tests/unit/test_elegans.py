@@ -74,7 +74,9 @@ def test_annotations_survive_on_the_kept_nodes(archive: Path) -> None:
             zip(
                 worm.nodes.column("cell_name").to_pylist(),
                 worm.nodes.column("cell_class").to_pylist(),
+                strict=True,
             ),
+            strict=True,
         )
     )
     assert by_id[0] == ("ADAL", "SENSORY NEURONS")
