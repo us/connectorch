@@ -13,9 +13,15 @@ from __future__ import annotations
 import numpy as np
 
 from ..ir import Connectome
-from ..ir.schema import SYNAPSE_COUNT, WEIGHT
+from ..ir.schema import SIGN, SYNAPSE_COUNT, WEIGHT
 
-__all__ = ["random_topology", "degree_preserving_rewire", "shuffle_edge_weights"]
+__all__ = [
+    "random_topology",
+    "degree_preserving_rewire",
+    "shuffle_edge_weights",
+    "shuffle_signs",
+    "collapse_ei",
+]
 
 
 def random_topology(connectome: Connectome, *, seed: int = 0) -> Connectome:
@@ -128,6 +134,66 @@ def shuffle_edge_weights(connectome: Connectome, *, seed: int = 0) -> Connectome
         columns,
         _control_provenance(connectome, "shuffle_edge_weights", seed),
     )
+
+
+def shuffle_signs(connectome: Connectome, *, seed: int = 0) -> Connectome:
+    """Keep wiring and counts, permute the ``sign`` column across edges.
+
+    Separates "which polarity each connection has" from everything else. If
+    shuffling signs costs nothing, the model was not using E/I identity.
+    Requires a ``sign`` edge column; see
+    :func:`connectorch.transforms.infer_signs`.
+    """
+    if SIGN not in connectome.edge_columns:
+        from ..exceptions import ConnectorchError
+
+        raise ConnectorchError(
+            "shuffle_signs needs a 'sign' edge column. Produce one with "
+            "connectorch.transforms.infer_signs(brain, mapping)."
+        )
+    rng = np.random.default_rng(seed)
+    permutation = rng.permutation(connectome.num_edges)
+    columns = {}
+    for name in connectome.edge_columns:
+        values = connectome.edge_attribute(name)
+        columns[name] = values[permutation] if name == SIGN else values
+
+    source, target = connectome.edge_index
+    return _rebuild(
+        connectome,
+        source,
+        target,
+        columns,
+        _control_provenance(connectome, "shuffle_signs", seed),
+    )
+
+
+def collapse_ei(connectome: Connectome) -> Connectome:
+    """Keep wiring and counts, set every edge sign to +1 (no inhibition).
+
+    The FlyVis ablation: collapsing excitatory/inhibitory/mixed types
+    performs like random wiring. If this costs nothing, E/I identity is not
+    doing work in the task.
+    """
+    if SIGN not in connectome.edge_columns:
+        from ..exceptions import ConnectorchError
+
+        raise ConnectorchError(
+            "collapse_ei needs a 'sign' edge column. Produce one with "
+            "connectorch.transforms.infer_signs(brain, mapping)."
+        )
+    columns = {}
+    for name in connectome.edge_columns:
+        values = connectome.edge_attribute(name)
+        columns[name] = np.ones_like(values) if name == SIGN else values
+
+    source, target = connectome.edge_index
+    record = dict(connectome.provenance)
+    record["history"] = [
+        *record.get("history", []),
+        {"op": "collapse_ei", "note": "all signs set to +1; inhibition removed"},
+    ]
+    return _rebuild(connectome, source, target, columns, record)
 
 
 def _rebuild(

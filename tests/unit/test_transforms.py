@@ -12,9 +12,11 @@ import pytest
 
 from connectorch import Connectome
 from connectorch.transforms import (
+    collapse_ei,
     degree_preserving_rewire,
     random_topology,
     shuffle_edge_weights,
+    shuffle_signs,
 )
 
 
@@ -76,6 +78,55 @@ def test_controls_are_labelled_as_controls(transform, brain: Connectome) -> None
     record = transform(brain, seed=0).provenance["history"][-1]
     assert record["control_for"] == brain.fingerprint()
     assert "not biological data" in record["note"]
+
+
+def signed_brain() -> Connectome:
+    rng = np.random.default_rng(1)
+    n = 40
+    source = rng.integers(0, n, 200)
+    target = rng.integers(0, n, 200)
+    base = Connectome.from_edges(
+        source=source,
+        target=target,
+        synapse_count=rng.integers(1, 40, 200),
+        nodes={"node_id": np.arange(n)},
+    )
+    columns = {name: base.edge_attribute(name) for name in base.edge_columns}
+    columns["sign"] = rng.choice(np.array([-1, 1], dtype=np.int8), size=base.num_edges).astype(
+        np.int8
+    )
+    return Connectome(
+        nodes={"node_id": base.node_ids},
+        edges={
+            "source": base.node_ids[base.edge_index[0]],
+            "target": base.node_ids[base.edge_index[1]],
+            **columns,
+        },
+        provenance=dict(base.provenance),
+    )
+
+
+def test_shuffle_signs_permutes_only_signs() -> None:
+    brain = signed_brain()
+    control = shuffle_signs(brain, seed=0)
+    assert np.array_equal(control.edge_index, brain.edge_index)
+    assert sorted(control.edge_attribute("sign").tolist()) == sorted(
+        brain.edge_attribute("sign").tolist()
+    )
+    assert not np.array_equal(control.edge_attribute("sign"), brain.edge_attribute("sign"))
+    assert np.array_equal(
+        control.edge_attribute("synapse_count"), brain.edge_attribute("synapse_count")
+    )
+
+
+def test_collapse_ei_removes_all_inhibition() -> None:
+    brain = signed_brain()
+    control = collapse_ei(brain)
+    assert np.array_equal(control.edge_index, brain.edge_index)
+    assert set(np.unique(control.edge_attribute("sign")).tolist()) == {1}
+    assert np.array_equal(
+        control.edge_attribute("synapse_count"), brain.edge_attribute("synapse_count")
+    )
 
 
 @pytest.mark.parametrize(

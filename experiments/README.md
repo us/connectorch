@@ -217,6 +217,33 @@ comparison is real vs shuffled (both solve clean): shuffled drops less on
 slow sweeps (0.20 vs 0.50), so count magnitudes add fragility there, not
 resilience. Mechanism unknown; reported as is.
 
+## 06 — What in the wiring computes direction? (endpoint-free mechanism)
+
+```bash
+PYTORCH_ENABLE_MPS_FALLBACK=0 python experiments/06_mechanism.py --seeds 5 --epochs 3
+```
+
+Exp 04's confound (full-span endpoints predict direction) is removed:
+partial-span cartridge sweeps, random start, path strictly inside the
+range. Same FlyVis recipe, 5 arms dissecting the mechanism:
+
+| arm | test accuracy | mean T4 DSI | silenced acc |
+|---|---|---|---|
+| `real` | 0.9535 ± 0.0382 | 0.28 ± 0.06 | 0.49 |
+| `no_delay` | 0.9832 ± 0.0157 | 0.25 ± 0.07 | 0.49 |
+| `random` | 0.8352 ± 0.1592 | 0.13 ± 0.12 | 0.49 |
+| `sign_shuffled` | 0.6941 ± 0.0726 | 0.10 ± 0.11 | 0.50 |
+| `ei_collapsed` | 0.5801 ± 0.1427 | 0.11 ± 0.06 | 0.50 |
+
+Three causal claims: (1) E/I identity is causal — shuffling signs drops
+0.95→0.69, removing inhibition entirely drops to 0.58. (2) Synaptic
+delays are NOT causal here — removing them changes nothing (0.98 vs
+0.95, within noise). The coincidence hypothesis for our delay priors is
+dead; the network solves partial-span motion without them. (3) Topology
+matters beyond signs — random wiring with matched sign statistics reaches
+0.84 but stays below intact wiring on every seed. Silencing T4 collapses
+all arms to chance.
+
 ### What this does not show (exp 03)
 
 Whether the floor is the task, the rate-neuron dynamics, or the frozen
